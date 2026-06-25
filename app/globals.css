@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/* Enable class-based dark mode for Tailwind v4 — required for next-themes */
+@variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Backgrounds */
+  --color-bg:                  #f0f2f5;
+  --color-surface:             #ffffff;
+  --color-surface-hover:       rgba(226, 232, 240, 0.5);
+
+  /* Borders */
+  --color-border:              #e2e8f0;
+  --color-border-muted:        rgba(226, 232, 240, 0.6);
+  --color-border-subtle:       rgba(203, 213, 225, 0.7);
+
+  /* Text */
+  --color-text-base:           #0f172a;
+  --color-text-secondary:      #1e293b;
+  --color-text-muted:          #475569;
+  --color-text-dim:            #64748b;
+  --color-text-ghost:          #94a3b8;
+
+  /* Primary accent — battle orange */
+  --color-accent:              #ea580c;
+  --color-accent-bg:           rgba(234, 88, 12, 0.1);
+  --color-accent-border:       rgba(234, 88, 12, 0.4);
+  --color-accent-hover:        #c2410c;
+
+  /* Fighter sides */
+  --color-side-a:              #ef4444;
+  --color-side-a-bg:           rgba(239, 68, 68, 0.1);
+  --color-side-a-border:       rgba(239, 68, 68, 0.4);
+  --color-side-b:              #3b82f6;
+  --color-side-b-bg:           rgba(59, 130, 246, 0.1);
+  --color-side-b-border:       rgba(59, 130, 246, 0.4);
+
+  /* Gold / rank */
+  --color-gold:                #d97706;
+  --color-gold-muted:          rgba(217, 119, 6, 0.15);
+
+  /* Chart primitives */
+  --color-chart-grid:          #e2e8f0;
+  --color-chart-tick:          #94a3b8;
+  --color-chart-tooltip-bg:    #ffffff;
+  --color-chart-tooltip-border:#e2e8f0;
+  --color-chart-tooltip-text:  #0f172a;
+}
+
+.dark {
+  /* Backgrounds — deep navy game theme */
+  --color-bg:                  #0d0f1a;
+  --color-surface:             rgba(17, 20, 38, 0.9);
+  --color-surface-hover:       rgba(26, 30, 55, 0.6);
+
+  /* Borders */
+  --color-border:              rgba(255, 255, 255, 0.08);
+  --color-border-muted:        rgba(255, 255, 255, 0.05);
+  --color-border-subtle:       rgba(255, 255, 255, 0.03);
+
+  /* Text */
+  --color-text-base:           #f0f0ff;
+  --color-text-secondary:      #c8cadc;
+  --color-text-muted:          #8b8fa8;
+  --color-text-dim:            #5a5e78;
+  --color-text-ghost:          #3a3e58;
+
+  /* Primary accent — battle orange (stays vibrant on dark) */
+  --color-accent:              #f97316;
+  --color-accent-bg:           rgba(249, 115, 22, 0.12);
+  --color-accent-border:       rgba(249, 115, 22, 0.35);
+  --color-accent-hover:        #fb923c;
+
+  /* Fighter sides */
+  --color-side-a:              #f87171;
+  --color-side-a-bg:           rgba(248, 113, 113, 0.12);
+  --color-side-a-border:       rgba(248, 113, 113, 0.35);
+  --color-side-b:              #60a5fa;
+  --color-side-b-bg:           rgba(96, 165, 250, 0.12);
+  --color-side-b-border:       rgba(96, 165, 250, 0.35);
+
+  /* Gold / rank */
+  --color-gold:                #fbbf24;
+  --color-gold-muted:          rgba(251, 191, 36, 0.15);
+
+  /* Chart primitives */
+  --color-chart-grid:          rgba(255, 255, 255, 0.06);
+  --color-chart-tick:          #5a5e78;
+  --color-chart-tooltip-bg:    #111224;
+  --color-chart-tooltip-border:rgba(255, 255, 255, 0.08);
+  --color-chart-tooltip-text:  #f0f0ff;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-base);
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
