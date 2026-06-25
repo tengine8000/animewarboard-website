@@ -1,0 +1,54 @@
+import { getAnimeSeries, getTopLevelCategories } from "@/lib/queries";
+import Link from "next/link";
+import Image from "next/image";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Anime",
+  description: "Browse all anime series on AnimeWarBoard.",
+};
+
+export default async function AnimePage() {
+  const series = await getAnimeSeries();
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <div>
+        <h1 className="text-3xl font-black tracking-tight">Anime Series</h1>
+        <p className="text-[var(--color-text-muted)] mt-1">
+          Browse characters and battles by series.
+        </p>
+      </div>
+
+      {series.length === 0 ? (
+        <div className="border border-dashed border-[var(--color-border)] rounded-2xl py-24 text-center space-y-2">
+          <p className="font-bold text-[var(--color-text-muted)]">No series yet</p>
+          <p className="text-sm text-[var(--color-text-ghost)]">Series will appear here once seeded.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {series.map((s) => (
+            <Link key={s.id} href={`/anime/${s.slug}`}
+              className="group block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden hover:border-[var(--color-accent)] transition-all">
+              <div className="aspect-[3/2] bg-[var(--color-border)] relative overflow-hidden">
+                {s.coverImage ? (
+                  <Image src={s.coverImage} alt={s.name} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-3xl font-black text-[var(--color-text-ghost)]">{s.name[0]}</span>
+                  </div>
+                )}
+              </div>
+              <div className="p-3">
+                <p className="font-bold text-sm text-[var(--color-text-base)] line-clamp-1">{s.name}</p>
+                {s.description && (
+                  <p className="text-xs text-[var(--color-text-muted)] mt-0.5 line-clamp-2">{s.description}</p>
+                )}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
