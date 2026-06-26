@@ -3,7 +3,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { users, matchupComments, entityComments, pointTransactions } from "@/db/schema";
+import { users, matchupComments, entityComments, pointTransactions, notifications } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -88,14 +88,23 @@ export async function manualPointAdjustAction(
 
   if (!amount || Math.abs(amount) > 100_000 || !note.trim()) return;
 
-  await db.insert(pointTransactions).values({
+  const [tx] = await db.insert(pointTransactions).values({
     userId:        targetUserId,
     amount,
     type:          "admin_adjustment",
     referenceType: null,
     referenceId:   null,
     note:          note.trim(),
-  });
+  }).returning({ id: pointTransactions.id });
+
+  if (tx) {
+    await db.insert(notifications).values({
+      userId:        targetUserId,
+      type:          "admin_point_adjustment",
+      referenceId:   tx.id,
+      referenceType: null,
+    }).catch(() => {});
+  }
 
   revalidatePath("/admin/users");
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useTransition } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Bell, X, MessageSquareReply, ThumbsUp, CheckCheck, UserCheck, UserX, Flag, ShieldOff } from "lucide-react";
+import { Bell, X, MessageSquareReply, ThumbsUp, CheckCheck, UserCheck, UserX, Flag, ShieldOff, Coins } from "lucide-react";
 import { getNotificationsAction, markAllReadAction } from "@/app/actions/notifications";
 import type { NotificationRow } from "@/lib/queries";
 
@@ -19,13 +19,16 @@ function timeAgo(iso: string): string {
 
 function notifText(n: NotificationRow): string {
   switch (n.type) {
-    case "reply_to_comment": return `${n.actorName ?? "Someone"} replied to your comment`;
-    case "comment_upvoted":  return "Your comment got an upvote";
-    case "entity_approved":  return "Your character submission was approved";
-    case "entity_rejected":  return "Your character submission was rejected";
-    case "flag_confirmed":   return "Your flag was confirmed";
-    case "flag_dismissed":   return "Your flag was dismissed";
-    default:                 return "New notification";
+    case "reply_to_comment":      return `${n.actorName ?? "Someone"} replied to your comment`;
+    case "comment_upvoted":       return "Your comment got an upvote";
+    case "entity_approved":       return "Your character submission was approved";
+    case "entity_rejected":       return "Your character submission was rejected";
+    case "flag_confirmed":        return "Your flag was confirmed";
+    case "flag_dismissed":        return "Your flag was dismissed";
+    case "admin_point_adjustment": return n.bodyExcerpt
+      ? `Admin adjusted your points: ${n.bodyExcerpt}`
+      : "An admin adjusted your points";
+    default:                      return "New notification";
   }
 }
 
@@ -45,9 +48,10 @@ function NotifIcon({ type }: { type: string }) {
     case "comment_upvoted":  return <ThumbsUp           size={sz} className={cls} style={{ color: "#22c55e" }} />;
     case "entity_approved":  return <UserCheck          size={sz} className={cls} style={{ color: "#22c55e" }} />;
     case "entity_rejected":  return <UserX              size={sz} className={cls} style={{ color: "#ef4444" }} />;
-    case "flag_confirmed":   return <Flag               size={sz} className={cls} style={{ color: "#22c55e" }} />;
-    case "flag_dismissed":   return <ShieldOff          size={sz} className={cls} style={{ color: "#ef4444" }} />;
-    default:                 return <Bell               size={sz} className={cls} style={{ color: "var(--color-text-muted)" }} />;
+    case "flag_confirmed":        return <Flag     size={sz} className={cls} style={{ color: "#22c55e" }} />;
+    case "flag_dismissed":        return <ShieldOff size={sz} className={cls} style={{ color: "#ef4444" }} />;
+    case "admin_point_adjustment": return <Coins   size={sz} className={cls} style={{ color: "#f59e0b" }} />;
+    default:                      return <Bell     size={sz} className={cls} style={{ color: "var(--color-text-muted)" }} />;
   }
 }
 

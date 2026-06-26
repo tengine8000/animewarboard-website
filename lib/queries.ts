@@ -1126,6 +1126,8 @@ export async function getNotifications(userId: string, limit = 30): Promise<Noti
       CASE
         WHEN n.reference_type = 'matchup_comment' THEN LEFT(mc.body, 80)
         WHEN n.reference_type = 'entity_comment'  THEN LEFT(ec.body, 80)
+        WHEN n.type = 'admin_point_adjustment'    THEN
+          CONCAT(CASE WHEN pt.amount > 0 THEN '+' ELSE '' END, pt.amount::text, ' — ', LEFT(pt.note, 60))
       END AS "bodyExcerpt"
     FROM notifications n
     LEFT JOIN matchup_comments mc  ON n.reference_type = 'matchup_comment' AND mc.id = n.reference_id
@@ -1135,6 +1137,7 @@ export async function getNotifications(userId: string, limit = 30): Promise<Noti
     LEFT JOIN users u_ec           ON ec.user_id = u_ec.id
     LEFT JOIN entities ent_ec      ON ec.entity_id = ent_ec.id
     LEFT JOIN entities ent         ON n.reference_type = 'entity'           AND ent.id = n.reference_id
+    LEFT JOIN point_transactions pt ON n.type = 'admin_point_adjustment'   AND pt.id = n.reference_id
     WHERE n.user_id = ${userId}
     ORDER BY n.created_at DESC
     LIMIT ${limit}

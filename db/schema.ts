@@ -81,6 +81,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "entity_rejected",
   "flag_confirmed",
   "flag_dismissed",
+  "admin_point_adjustment",
 ]);
 
 export const notificationRefTypeEnum = pgEnum("notification_ref_type", [
