@@ -28,9 +28,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!data) return { title: "Battle Not Found" };
   const labelA = deriveSideLabel(data.sideALabel, data.sideA);
   const labelB = deriveSideLabel(data.sideBLabel, data.sideB);
+  const title = `${labelA} vs ${labelB}`;
+  const desc  = `Who wins? ${labelA} vs ${labelB} — make your prediction on AnimeWarBoard.`;
   return {
-    title: `${labelA} vs ${labelB}`,
-    description: `Who wins? ${labelA} vs ${labelB} — make your prediction on AnimeWarBoard.`,
+    title,
+    description: desc,
+    openGraph: { title, description: desc, type: "website" },
+    twitter: { card: "summary_large_image", title, description: desc },
   };
 }
 
@@ -147,8 +151,21 @@ export default async function BattlePage({ params }: Props) {
   const imageA  = firstA?.variant.imageUrl ?? firstA?.entity.imageUrl ?? null;
   const imageB  = firstB?.variant.imageUrl ?? firstB?.entity.imageUrl ?? null;
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://animewarboard.com";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": `${labelA} vs ${labelB} | AnimeWarBoard`,
+    "description": `Who wins? ${labelA} vs ${labelB} — make your prediction on AnimeWarBoard.`,
+    "url": `${siteUrl}/battles/${matchup.slug}`,
+  };
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-3">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* Breadcrumb */}
       <nav className="text-xs" style={{ color: "var(--color-text-muted)" }}>

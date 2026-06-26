@@ -1,0 +1,36 @@
+# AnimeWarBoard.com
+> Make your case. Settle the debate. Predict anime battles and see how the community stacks up.
+
+AnimeWarBoard is a community-driven platform where anime fans vote on character battles, submit stat ratings, and debate who would win in hypothetical match-ups across different series.
+
+## URL Patterns
+
+- `/` — Homepage: trending battles, most contested matchups, platform stats
+- `/anime` — Browse all anime series
+- `/anime/[slug]` — Series hub: character roster, related battles (e.g. /anime/naruto)
+- `/characters` — Browse all characters
+- `/characters/[slug]` — Character profile: canonical stats, community ratings, battle record, comments (e.g. /characters/naruto-uzumaki)
+- `/battles` — Browse all community-created matchups, sortable by votes / recent / most contested
+- `/battles/[slug]` — Battle page: vote split, community stat predictions, comments
+- `/leaderboards` — Top characters by win rate, top users by XP, most contested battles
+- `/ranks` — Military rank system: Private → Field Marshal, earned through XP
+
+## Data Model
+
+**Battles (matchups)**: Community-created 1v1 or team vs team match-ups between anime characters. Each battle has a vote split (Side A % vs Side B %), a "Contested vs Settled" badge (≥75% = Settled), and a Community Edge metric showing which side the community favors across all 9 stat dimensions.
+
+**Characters (entities)**: Anime characters with 9 canonical stats rated 0–100: Speed, Strength, Durability, Stamina, Battle IQ, Range, Regeneration, Hax, Versatility.
+
+**Series (categories)**: Anime series grouping characters (e.g. Naruto, Bleach, One Piece, Dragon Ball Z, Attack on Titan, Demon Slayer, Hunter x Hunter, Jujutsu Kaisen).
+
+**Community stats**: Registered users submit their own stat ratings per character. These are averaged and shown alongside the canonical stats as a radar chart overlay.
+
+**Votes**: Registered users vote on battles (Side A wins / Side B wins / Draw) and optionally rate each of the 9 stat attributes, contributing to the Community Edge metric.
+
+## Community & Gamification
+
+Users earn XP and points for: daily login, comments, upvotes received, stat ratings, battle predictions. Seven military ranks from Private to Field Marshal. A leaderboard tracks top predictors by lifetime XP.
+
+## Content Policy
+
+All battle pages are publicly accessible and indexable. Character and series pages are the canonical hub pages for the site's structured data.

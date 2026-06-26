@@ -30,10 +30,14 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const data = await getEntityBySlug(slug);
+  const name = data?.entity.name ?? "Character";
+  const desc = data?.entity.bio
+    ?? `${data?.entity.name} from ${data?.entity.series.name} — stats, battle record, and community predictions.`;
   return {
-    title: data?.entity.name ?? "Character",
-    description: data?.entity.bio
-      ?? `${data?.entity.name} from ${data?.entity.series.name} — stats, battle record, and community predictions.`,
+    title: name,
+    description: desc,
+    openGraph: { title: name, description: desc, type: "website" },
+    twitter: { card: "summary_large_image", title: name, description: desc },
   };
 }
 
@@ -62,8 +66,28 @@ export default async function CharacterPage({ params }: Props) {
   const userRank   = pointSummary?.rank ?? null;
   const xpNeeded   = pointSummary?.xpToNext ?? null;
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://animewarboard.com";
+  const absImage = imageUrl ? (imageUrl.startsWith("http") ? imageUrl : `${siteUrl}${imageUrl}`) : undefined;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": `${entity.name} | AnimeWarBoard`,
+    "description": entity.bio ?? `${entity.name} from ${entity.series.name} — stats, battle record, and community predictions.`,
+    "url": `${siteUrl}/characters/${entity.slug}`,
+    ...(absImage ? { "image": absImage } : {}),
+    "about": {
+      "@type": "Thing",
+      "name": entity.name,
+      "description": entity.bio ?? undefined,
+    },
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* Breadcrumb */}
       <nav className="text-sm text-[var(--color-text-muted)]">
