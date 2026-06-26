@@ -4,7 +4,7 @@ import {
   votes, anonymousVotes, attributes, entityStats, communityEntityStats,
   voteAttributes, matchupComments, entityComments, commentVotes, users,
 } from "@/db/schema";
-import { eq, desc, asc, sql, count, and, isNull, ilike } from "drizzle-orm";
+import { eq, desc, asc, sql, count, and, isNull, ilike, inArray } from "drizzle-orm";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -465,6 +465,60 @@ export async function getMatchupRadarStats(
 
   const [a, b] = await Promise.all([fetchStats(variantA), fetchStats(variantB)]);
   return { a, b };
+}
+
+// ---------------------------------------------------------------------------
+// Entity stats (Phase 4)
+// ---------------------------------------------------------------------------
+
+export async function getEntityStats(variantId: string): Promise<RadarStat[]> {
+  const rows = await db
+    .select({
+      slug:      attributes.slug,
+      name:      attributes.name,
+      sortOrder: attributes.sortOrder,
+      value:     entityStats.value,
+    })
+    .from(entityStats)
+    .innerJoin(attributes, eq(entityStats.attributeId, attributes.id))
+    .where(eq(entityStats.variantId, variantId))
+    .orderBy(asc(attributes.sortOrder));
+  return rows.map((r) => ({ ...r, value: Number(r.value) }));
+}
+
+export async function getCommunityEntityStatsAvg(variantId: string): Promise<RadarStat[]> {
+  const rows = await db
+    .select({
+      slug:      attributes.slug,
+      name:      attributes.name,
+      sortOrder: attributes.sortOrder,
+      avg:       sql<string>`AVG(${communityEntityStats.value})`,
+    })
+    .from(communityEntityStats)
+    .innerJoin(attributes, eq(communityEntityStats.attributeId, attributes.id))
+    .where(eq(communityEntityStats.variantId, variantId))
+    .groupBy(attributes.id, attributes.slug, attributes.name, attributes.sortOrder)
+    .orderBy(asc(attributes.sortOrder));
+  if (rows.length === 0) return [];
+  return rows.map((r) => ({
+    slug: r.slug, name: r.name, sortOrder: r.sortOrder,
+    value: Math.round(parseFloat(r.avg)),
+  }));
+}
+
+export async function getUserEntityStats(
+  userId: string,
+  variantId: string,
+): Promise<Record<string, number>> {
+  const rows = await db
+    .select({ slug: attributes.slug, value: communityEntityStats.value })
+    .from(communityEntityStats)
+    .innerJoin(attributes, eq(communityEntityStats.attributeId, attributes.id))
+    .where(and(
+      eq(communityEntityStats.userId, userId),
+      eq(communityEntityStats.variantId, variantId),
+    ));
+  return Object.fromEntries(rows.map((r) => [r.slug, Number(r.value)]));
 }
 
 // ---------------------------------------------------------------------------

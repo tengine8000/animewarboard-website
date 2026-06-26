@@ -1,12 +1,19 @@
 export const dynamic = "force-dynamic";
 
-import { getEntityBySlug, getEntityComments } from "@/lib/queries";
+import {
+  getEntityBySlug,
+  getEntityStats,
+  getCommunityEntityStatsAvg,
+  getUserEntityStats,
+  getEntityComments,
+} from "@/lib/queries";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Swords } from "lucide-react";
 import { auth } from "@/auth";
 import { VariantSelector } from "@/components/variant-selector";
+import { EntityStatsPanel } from "@/components/entity-stats-panel";
 import { CommentSection } from "@/components/comment-section";
 import type { Metadata } from "next";
 
@@ -40,7 +47,15 @@ export default async function CharacterPage({ params }: Props) {
   const seriesColor = SERIES_PALETTE[entity.series.slug] ?? SERIES_PALETTE.default;
   const isLoggedIn  = !!session?.user?.id;
 
-  const comments = await getEntityComments(entity.id);
+  const userId = session?.user?.id ?? null;
+  const defaultVariantId = defaultVariant?.id ?? null;
+
+  const [entityStatsData, communityStatsData, userStatsData, comments] = await Promise.all([
+    defaultVariantId ? getEntityStats(defaultVariantId) : Promise.resolve([]),
+    defaultVariantId ? getCommunityEntityStatsAvg(defaultVariantId) : Promise.resolve([]),
+    defaultVariantId && userId ? getUserEntityStats(userId, defaultVariantId) : Promise.resolve({}),
+    getEntityComments(entity.id),
+  ]);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
@@ -120,19 +135,22 @@ export default async function CharacterPage({ params }: Props) {
         seriesColor={seriesColor}
       />
 
-      {/* Stats — placeholder until Phase 4 */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-black">Power Stats</h2>
-          <span className="text-xs border border-dashed px-2 py-0.5 rounded-full"
-            style={{ color: "var(--color-text-ghost)", borderColor: "var(--color-border)" }}>
-            Radar chart · Phase 4
-          </span>
-        </div>
-        <div className="border border-dashed rounded-2xl py-12 text-center text-sm"
-          style={{ borderColor: "var(--color-border)", color: "var(--color-text-muted)" }}>
-          Community stat ratings will appear here.
-        </div>
+      {/* Power Stats */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-black">Power Stats</h2>
+        {defaultVariantId ? (
+          <EntityStatsPanel
+            variantId={defaultVariantId}
+            entitySlug={entity.slug}
+            entityStats={entityStatsData}
+            communityStats={communityStatsData}
+            userStats={userStatsData}
+            isLoggedIn={isLoggedIn}
+            seriesColor={seriesColor}
+          />
+        ) : (
+          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>No variant data available.</p>
+        )}
       </section>
 
       {/* Community Discussion */}

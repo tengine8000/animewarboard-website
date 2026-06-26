@@ -58,7 +58,7 @@ export function RadarChart({
   const labelR = maxR + size * 0.1;
   const glowId = `rim-glow-${uid}`;
 
-  const axes = statsA.length > 0 ? statsA : statsB;
+  const axes = statsA.length > 0 ? statsA : statsB.length > 0 ? statsB : statsC;
   const n    = axes.length;
 
   if (n === 0) {
