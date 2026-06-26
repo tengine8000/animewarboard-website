@@ -9,9 +9,23 @@ export const metadata: Metadata = {
   description: "Browse all anime battles and submit your predictions on AnimeWarBoard.",
 };
 
-export default async function BattlesPage() {
+const SORT_MAP: Record<string, "votes" | "recent" | "controversial"> = {
+  votes:     "votes",
+  recent:    "recent",
+  contested: "controversial",
+};
+
+export default async function BattlesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string>>;
+}) {
+  const sp = await searchParams;
+  const rawSort = sp.sort ?? "votes";
+  const sort = SORT_MAP[rawSort] ?? "votes";
+
   const [matchups, stats] = await Promise.all([
-    getAllMatchups({ limit: 24 }),
+    getAllMatchups({ limit: 24, sort }),
     getPlatformStats(),
   ]);
 
@@ -73,22 +87,29 @@ export default async function BattlesPage() {
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl">
           {[
-            { icon: TrendingUp, label: "Most Voted",  href: "/battles?sort=votes"  },
-            { icon: Clock,      label: "Recent",      href: "/battles?sort=recent" },
-            { icon: Flame,      label: "Contested",   href: "/battles?sort=contested" },
-          ].map(({ icon: Icon, label, href }) => (
-            <Link
-              key={label}
-              href={href}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[var(--color-text-muted)] hover:text-[var(--color-text-base)] hover:bg-[var(--color-surface-hover)] transition-colors"
-            >
-              <Icon size={12} />
-              {label}
-            </Link>
-          ))}
+            { icon: TrendingUp, label: "Most Voted",  href: "/battles?sort=votes",     key: "votes"     },
+            { icon: Clock,      label: "Recent",      href: "/battles?sort=recent",    key: "recent"    },
+            { icon: Flame,      label: "Contested",   href: "/battles?sort=contested", key: "contested" },
+          ].map(({ icon: Icon, label, href, key }) => {
+            const isActive = rawSort === key || (key === "votes" && rawSort === "votes");
+            return (
+              <Link
+                key={label}
+                href={href}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                style={isActive
+                  ? { background: "var(--color-accent)", color: "#fff" }
+                  : { color: "var(--color-text-muted)" }
+                }
+              >
+                <Icon size={12} />
+                {label}
+              </Link>
+            );
+          })}
         </div>
 
-        <p className="text-xs text-[var(--color-text-ghost)]">
+        <p className="text-xs" style={{ color: "var(--color-text-ghost)" }}>
           {matchups.length} battle{matchups.length !== 1 ? "s" : ""}
         </p>
       </div>

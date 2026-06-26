@@ -1,14 +1,15 @@
 import Link from "next/link";
-import { Swords, TrendingUp, Users, Zap } from "lucide-react";
-import { getPlatformStats, getTrendingMatchups, getRecentEntities } from "@/lib/queries";
+import { Swords, TrendingUp, Users, Zap, Flame } from "lucide-react";
+import { getPlatformStats, getTrendingMatchups, getRecentEntities, getHomepageContestedMatchups } from "@/lib/queries";
 import { MatchupCard } from "@/components/matchup-card";
 import { CharacterCard } from "@/components/character-card";
 
 export default async function HomePage() {
-  const [stats, trending, recent] = await Promise.all([
+  const [stats, trending, recent, contested] = await Promise.all([
     getPlatformStats(),
     getTrendingMatchups(6),
     getRecentEntities(12),
+    getHomepageContestedMatchups(6),
   ]);
 
   return (
@@ -91,6 +92,24 @@ export default async function HomePage() {
           </div>
         )}
       </section>
+
+      {/* ── Most Contested Battles ───────────────────────────────────── */}
+      {contested.length > 0 && (
+        <section className="space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-black tracking-tight flex items-center gap-2">
+              <Flame size={18} className="text-[var(--color-accent)]" />
+              Most Contested — Community Still Can&apos;t Decide
+            </h2>
+            <Link href="/leaderboards" className="text-sm text-[var(--color-accent)] hover:underline font-semibold">
+              Full leaderboards →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {contested.map((m) => <MatchupCard key={m.id} matchup={m} />)}
+          </div>
+        </section>
+      )}
 
       {/* ── Recently Added Characters ─────────────────────────────────── */}
       <section className="space-y-5">

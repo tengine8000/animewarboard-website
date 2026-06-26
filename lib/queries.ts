@@ -3,11 +3,22 @@ import {
   matchups, matchupParticipants, entityVariants, entities, categories,
   votes, anonymousVotes, attributes, entityStats, communityEntityStats,
   voteAttributes, matchupComments, entityComments, commentVotes, users,
-  pointTransactions,
+  pointTransactions, analyticsEvents,
 } from "@/db/schema";
 import { eq, desc, asc, sql, count, and, isNull, ilike, inArray } from "drizzle-orm";
 import { getRankFromXp } from "@/lib/ranks";
 import { getAdminSettings } from "@/lib/points";
+import { redis } from "@/lib/redis";
+
+async function withCache<T>(key: string, ttl: number, fn: () => Promise<T>): Promise<T> {
+  try {
+    const hit = await redis.get(key);
+    if (hit) return JSON.parse(hit) as T;
+  } catch { /* redis down — fall through */ }
+  const result = await fn();
+  try { await redis.set(key, JSON.stringify(result), "EX", ttl); } catch { /* best-effort */ }
+  return result;
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -230,15 +241,30 @@ export async function getAllMatchups(opts: {
   categoryId?: string;
 } = {}): Promise<MatchupCard[]> {
   const { limit = 20, offset = 0, sort = "votes" } = opts;
+  return withCache(`awb:matchups:${sort}:${limit}:${offset}`, 60, () => _getAllMatchups(sort, limit, offset));
+}
+
+async function _getAllMatchups(
+  sort: "votes" | "recent" | "controversial",
+  limit: number,
+  offset: number,
+): Promise<MatchupCard[]> {
+  const orderCols =
+    sort === "recent"
+      ? [desc(matchups.createdAt)]
+      : sort === "controversial"
+      ? [
+          asc(sql`ABS(SUM(CASE WHEN ${votes.verdict} = 'a' THEN 1 ELSE 0 END) - SUM(CASE WHEN ${votes.verdict} = 'b' THEN 1 ELSE 0 END))`),
+          desc(count(votes.id)),
+        ]
+      : [desc(count(votes.id))];
 
   const rows = await db
     .select({ m: matchups, voteCount: count(votes.id) })
     .from(matchups)
     .leftJoin(votes, eq(votes.matchupId, matchups.id))
     .groupBy(matchups.id)
-    .orderBy(
-      sort === "recent" ? desc(matchups.createdAt) : desc(count(votes.id))
-    )
+    .orderBy(...orderCols)
     .limit(limit)
     .offset(offset)
     .then((rs) => rs.map((r) => r.m));
@@ -386,21 +412,27 @@ export async function getEntityBySlug(slug: string) {
     .where(eq(entityVariants.entityId, entity.id))
     .orderBy(desc(entityVariants.isDefault), asc(entityVariants.name));
 
-  // Battle record: count W/L/D across all matchups this entity appears in
-  const battleRecord = await db
-    .select({ verdict: votes.verdict, c: count() })
-    .from(matchupParticipants)
-    .innerJoin(entityVariants, eq(matchupParticipants.variantId, entityVariants.id))
-    .innerJoin(votes, and(
-      eq(votes.matchupId, matchupParticipants.matchupId),
-    ))
-    .where(eq(entityVariants.entityId, entity.id))
-    .groupBy(votes.verdict);
+  // Battle record: side-aware W/L/D. Entity on side A wins when verdict='a', loses when verdict='b'.
+  const battleRaw = await db.execute(sql`
+    SELECT
+      CASE
+        WHEN (mp.side = 'a' AND v.verdict = 'a') OR (mp.side = 'b' AND v.verdict = 'b') THEN 'win'
+        WHEN v.verdict = 'draw' THEN 'draw'
+        ELSE 'loss'
+      END AS outcome,
+      COUNT(*) AS c
+    FROM matchup_participants mp
+    INNER JOIN entity_variants ev ON mp.variant_id = ev.id
+    INNER JOIN votes v ON v.matchup_id = mp.matchup_id
+    WHERE ev.entity_id = ${entity.id}
+    GROUP BY 1
+  `);
+  const battleRows = battleRaw as unknown as any[];
+  const wins   = Number(battleRows.find((r) => r.outcome === "win")?.c  ?? 0);
+  const losses = Number(battleRows.find((r) => r.outcome === "loss")?.c ?? 0);
+  const draws  = Number(battleRows.find((r) => r.outcome === "draw")?.c ?? 0);
 
-  const w = Number(battleRecord.find((r) => r.verdict === "a")?.c ?? 0) +
-            Number(battleRecord.find((r) => r.verdict === "b")?.c ?? 0);
-
-  return { entity, variants, battleRecord: { wins: w, losses: 0, draws: 0 } };
+  return { entity, variants, battleRecord: { wins, losses, draws } };
 }
 
 export async function getEntitiesBySeries(categoryId: string, limit = 20) {
@@ -557,20 +589,34 @@ export type CommunityEdge = {
 };
 
 export async function getMatchupCommunityEdge(matchupId: string): Promise<CommunityEdge> {
+  return withCache(`awb:edge:${matchupId}`, 30, () => _getMatchupCommunityEdge(matchupId));
+}
+
+async function _getMatchupCommunityEdge(matchupId: string): Promise<CommunityEdge> {
+  // Average per-user first (each voter counts equally regardless of how many attributes they filled)
+  const perUser = db.$with("per_user").as(
+    db
+      .select({
+        userId:  voteAttributes.userId,
+        userAvg: sql<string>`AVG(${voteAttributes.scoreA})`.as("user_avg"),
+      })
+      .from(voteAttributes)
+      .where(eq(voteAttributes.matchupId, matchupId))
+      .groupBy(voteAttributes.userId)
+  );
+
   const [row] = await db
+    .with(perUser)
     .select({
-      avgScoreA:  sql<string>`AVG(${voteAttributes.scoreA})`,
-      voterCount: sql<string>`COUNT(DISTINCT ${voteAttributes.userId})`,
+      poolAvg:    sql<string>`AVG(${perUser.userAvg})`,
+      voterCount: sql<string>`COUNT(*)`,
     })
-    .from(voteAttributes)
-    .where(eq(voteAttributes.matchupId, matchupId));
+    .from(perUser);
 
-  if (!row?.avgScoreA) return { winner: null, edgePercent: 0, voterCount: 0 };
+  if (!row?.poolAvg) return { winner: null, edgePercent: 0, voterCount: 0 };
 
-  const avg        = parseFloat(row.avgScoreA);
+  const avg        = parseFloat(row.poolAvg);
   const voterCount = parseInt(row.voterCount, 10);
-  // edge: positive = Fighter A leads, negative = Fighter B leads
-  // e.g. avg=65 → 2*65-100 = +30, so Fighter A leads by 30%
   const edge = Math.round(2 * avg - 100);
 
   return {
@@ -585,16 +631,33 @@ export async function getMatchupCommunityEdge(matchupId: string): Promise<Commun
 // ---------------------------------------------------------------------------
 
 export async function getMatchupCommunityStatAverages(matchupId: string): Promise<RadarStat[]> {
+  return withCache(`awb:stats-avg:${matchupId}`, 30, () => _getMatchupCommunityStatAverages(matchupId));
+}
+
+async function _getMatchupCommunityStatAverages(matchupId: string): Promise<RadarStat[]> {
+  // Average per-user per-attribute first, then average those — prevents heavy voters skewing the polygon
+  const perUserAttr = db.$with("per_user_attr").as(
+    db
+      .select({
+        userId:      voteAttributes.userId,
+        attributeId: voteAttributes.attributeId,
+        userAvg:     sql<string>`AVG(${voteAttributes.scoreA})`.as("user_avg"),
+      })
+      .from(voteAttributes)
+      .where(eq(voteAttributes.matchupId, matchupId))
+      .groupBy(voteAttributes.userId, voteAttributes.attributeId)
+  );
+
   const rows = await db
+    .with(perUserAttr)
     .select({
       slug:      attributes.slug,
       name:      attributes.name,
       sortOrder: attributes.sortOrder,
-      avgScoreA: sql<string>`AVG(${voteAttributes.scoreA})`,
+      avgScoreA: sql<string>`AVG(${perUserAttr.userAvg})`,
     })
-    .from(voteAttributes)
-    .innerJoin(attributes, eq(voteAttributes.attributeId, attributes.id))
-    .where(eq(voteAttributes.matchupId, matchupId))
+    .from(perUserAttr)
+    .innerJoin(attributes, eq(perUserAttr.attributeId, attributes.id))
     .groupBy(attributes.id, attributes.slug, attributes.name, attributes.sortOrder)
     .orderBy(asc(attributes.sortOrder));
 
@@ -700,4 +763,254 @@ export async function getEntityComments(entityId: string): Promise<CommentRow[]>
       score: scoreMap[r.id] ?? 0,
     };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Leaderboards (Phase 6)
+// ---------------------------------------------------------------------------
+
+export type EntityLeaderRow = {
+  id: string;
+  name: string;
+  slug: string;
+  imageUrl: string | null;
+  seriesName: string;
+  seriesSlug: string;
+  totalVotes: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  winRate: number;
+};
+
+export async function getTopEntities(limit = 20): Promise<EntityLeaderRow[]> {
+  return withCache(`awb:lb:entities:${limit}`, 300, () => _getTopEntities(limit));
+}
+
+async function _getTopEntities(limit: number): Promise<EntityLeaderRow[]> {
+  // CTE so the outer ORDER BY can cast named columns — Postgres won't cast a SELECT alias inline.
+  const raw = await db.execute(sql`
+    WITH stats AS (
+      SELECT
+        e.id,
+        e.name,
+        e.slug,
+        e.image_url AS "imageUrl",
+        c.name      AS "seriesName",
+        c.slug      AS "seriesSlug",
+        COUNT(v.id) AS total_votes,
+        SUM(CASE WHEN (mp.side = 'a' AND v.verdict = 'a') OR (mp.side = 'b' AND v.verdict = 'b') THEN 1 ELSE 0 END) AS wins,
+        SUM(CASE WHEN v.verdict = 'draw' THEN 1 ELSE 0 END) AS draws,
+        COUNT(v.id)
+          - SUM(CASE WHEN (mp.side = 'a' AND v.verdict = 'a') OR (mp.side = 'b' AND v.verdict = 'b') THEN 1 ELSE 0 END)
+          - SUM(CASE WHEN v.verdict = 'draw' THEN 1 ELSE 0 END) AS losses
+      FROM entities e
+      INNER JOIN categories c            ON e.category_id = c.id
+      INNER JOIN entity_variants ev      ON ev.entity_id = e.id
+      INNER JOIN matchup_participants mp ON mp.variant_id = ev.id
+      INNER JOIN votes v                 ON v.matchup_id = mp.matchup_id
+      WHERE e.status = 'approved'
+      GROUP BY e.id, e.name, e.slug, e.image_url, c.name, c.slug
+      HAVING COUNT(v.id) >= 3
+    )
+    SELECT * FROM stats
+    ORDER BY wins::float / NULLIF(total_votes, 0) DESC, total_votes DESC
+    LIMIT ${limit}
+  `);
+  return (raw as unknown as any[]).map((r) => ({
+    id:         r.id,
+    name:       r.name,
+    slug:       r.slug,
+    imageUrl:   r.imageUrl ?? null,
+    seriesName: r.seriesName,
+    seriesSlug: r.seriesSlug,
+    totalVotes: Number(r.total_votes),
+    wins:       Number(r.wins),
+    losses:     Number(r.losses),
+    draws:      Number(r.draws),
+    winRate:    Number(r.total_votes) > 0 ? Math.round((Number(r.wins) / Number(r.total_votes)) * 100) : 0,
+  }));
+}
+
+export type UserLeaderRow = {
+  id: string;
+  name: string | null;
+  image: string | null;
+  lifetimeXp: number;
+  rank: import("@/lib/ranks").RankName;
+};
+
+export async function getTopUsers(limit = 20): Promise<UserLeaderRow[]> {
+  return withCache(`awb:lb:users:${limit}`, 300, () => _getTopUsers(limit));
+}
+
+async function _getTopUsers(limit: number): Promise<UserLeaderRow[]> {
+  const [raw, settings] = await Promise.all([
+    db.execute(sql`
+      SELECT
+        u.id,
+        u.name,
+        u.image,
+        COALESCE(SUM(CASE WHEN pt.amount > 0 THEN pt.amount ELSE 0 END), 0) AS "lifetimeXp"
+      FROM users u
+      LEFT JOIN point_transactions pt ON pt.user_id = u.id
+      GROUP BY u.id, u.name, u.image
+      ORDER BY "lifetimeXp" DESC
+      LIMIT ${limit}
+    `),
+    getAdminSettings(),
+  ]);
+  return (raw as unknown as any[]).map((r) => {
+    const xp = Number(r.lifetimeXp);
+    return {
+      id:         r.id,
+      name:       r.name ?? null,
+      image:      r.image ?? null,
+      lifetimeXp: xp,
+      rank:       getRankFromXp(xp, settings).rank,
+    };
+  });
+}
+
+export async function getMostDebatedMatchups(limit = 10): Promise<MatchupCard[]> {
+  return withCache(`awb:lb:debated:${limit}`, 300, () => _getMostDebatedMatchups(limit));
+}
+
+async function _getMostDebatedMatchups(limit: number): Promise<MatchupCard[]> {
+  const raw = await db.execute(sql`
+    SELECT m.id
+    FROM matchups m
+    INNER JOIN votes v ON v.matchup_id = m.id
+    GROUP BY m.id
+    HAVING COUNT(v.id) >= 5
+    ORDER BY
+      ABS(
+        SUM(CASE WHEN v.verdict = 'a' THEN 1 ELSE 0 END) -
+        SUM(CASE WHEN v.verdict = 'b' THEN 1 ELSE 0 END)
+      ) ASC,
+      COUNT(v.id) DESC
+    LIMIT ${limit}
+  `);
+  const ids = (raw as unknown as any[]).map((r) => r.id as string);
+  if (ids.length === 0) return [];
+
+  const matchupRows = await db
+    .select()
+    .from(matchups)
+    .where(inArray(matchups.id, ids));
+
+  const idOrder = new Map(ids.map((id, i) => [id, i]));
+  const ordered = matchupRows.sort((a, b) => (idOrder.get(a.id) ?? 99) - (idOrder.get(b.id) ?? 99));
+
+  return attachParticipantsAndVotes(ordered);
+}
+
+// 12-hour cache for homepage — contested battles don't need real-time freshness
+export async function getHomepageContestedMatchups(limit = 6): Promise<MatchupCard[]> {
+  return withCache(`awb:hp:contested:${limit}`, 43200, () => _getMostDebatedMatchups(limit));
+}
+
+// ---------------------------------------------------------------------------
+// Admin dashboard stats (Phase 6)
+// ---------------------------------------------------------------------------
+
+
+export type AdminDashboardStats = {
+  totalVisitors: number;
+  totalVotes: number;
+  votesPerVisitor: string;
+  trafficSources: { source: string; count: number }[];
+  topMatchupsByViews: { path: string; views: number }[];
+  topMatchupsByVotes: { matchupId: string; slug: string; totalVotes: number }[];
+  conversionFunnel: {
+    visitors: number;
+    registeredVoters: number;
+    conversionRate: string;
+  };
+};
+
+export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
+  return withCache("awb:admin:dashboard", 60, _getAdminDashboardStats);
+}
+
+async function _getAdminDashboardStats(): Promise<AdminDashboardStats> {
+  // All aggregation done in Postgres — nothing is pulled into Node memory.
+  const [visitorsRaw, sourcesRaw, topPagesRaw, votesRaw, topVotesRaw] = await Promise.all([
+    // Unique sessions + registered visitor count
+    db.execute(sql`
+      SELECT
+        COUNT(DISTINCT session_id)                         AS unique_sessions,
+        COUNT(DISTINCT CASE WHEN user_id IS NOT NULL THEN user_id END) AS registered_visitors
+      FROM analytics_events
+      WHERE event_type = 'page_view'
+    `),
+    // Traffic source breakdown — bucketed in SQL, not a JS loop over every row
+    db.execute(sql`
+      SELECT
+        CASE
+          WHEN referrer ILIKE '%reddit.com%'                                        THEN 'Reddit'
+          WHEN referrer ILIKE '%discord.com%' OR referrer ILIKE '%discord.gg%'     THEN 'Discord'
+          WHEN referrer ILIKE '%twitter.com%' OR referrer ILIKE '%x.com%'
+            OR referrer ILIKE '%t.co%'                                              THEN 'Twitter/X'
+          WHEN referrer ILIKE '%tiktok.com%'                                        THEN 'TikTok'
+          WHEN referrer ILIKE '%youtube.com%'                                       THEN 'YouTube'
+          WHEN referrer ILIKE '%google.com%'                                        THEN 'Google'
+          WHEN referrer ILIKE '%facebook.com%' OR referrer ILIKE '%fb.com%'        THEN 'Facebook'
+          WHEN referrer IS NULL OR referrer = ''                                    THEN 'Direct'
+          ELSE 'Other'
+        END AS source,
+        COUNT(*) AS count
+      FROM analytics_events
+      WHERE event_type = 'page_view'
+      GROUP BY source
+      ORDER BY count DESC
+    `),
+    // Top battle pages by views — filtered + grouped in SQL
+    db.execute(sql`
+      SELECT path, COUNT(*) AS views
+      FROM analytics_events
+      WHERE event_type = 'page_view' AND path LIKE '/battles/%'
+      GROUP BY path
+      ORDER BY views DESC
+      LIMIT 10
+    `),
+    db.execute(sql`SELECT COUNT(*) AS c FROM votes`),
+    db.execute(sql`
+      SELECT m.id AS "matchupId", m.slug, COUNT(v.id) AS "totalVotes"
+      FROM matchups m
+      INNER JOIN votes v ON v.matchup_id = m.id
+      GROUP BY m.id, m.slug
+      ORDER BY COUNT(v.id) DESC
+      LIMIT 10
+    `),
+  ]);
+
+  const visitorRow     = (visitorsRaw as unknown as any[])[0] ?? {};
+  const uniqueSessions = Number(visitorRow.unique_sessions   ?? 0);
+  const regVisitors    = Number(visitorRow.registered_visitors ?? 0);
+  const totalVotes     = Number(((votesRaw as unknown as any[])[0])?.c ?? 0);
+
+  return {
+    totalVisitors:   uniqueSessions,
+    totalVotes,
+    votesPerVisitor: uniqueSessions > 0 ? (totalVotes / uniqueSessions).toFixed(2) : "0.00",
+    trafficSources: (sourcesRaw as unknown as any[]).map((r) => ({
+      source: r.source as string,
+      count:  Number(r.count),
+    })),
+    topMatchupsByViews: (topPagesRaw as unknown as any[]).map((r) => ({
+      path:  r.path  as string,
+      views: Number(r.views),
+    })),
+    topMatchupsByVotes: (topVotesRaw as unknown as any[]).map((r) => ({
+      matchupId:  r.matchupId  as string,
+      slug:       r.slug       as string,
+      totalVotes: Number(r.totalVotes),
+    })),
+    conversionFunnel: {
+      visitors:         uniqueSessions,
+      registeredVoters: regVisitors,
+      conversionRate:   uniqueSessions > 0 ? ((regVisitors / uniqueSessions) * 100).toFixed(1) + "%" : "0%",
+    },
+  };
 }
