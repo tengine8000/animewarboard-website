@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { matchupComments, entityComments, commentVotes } from "@/db/schema";
+import { matchupComments, entityComments, commentVotes, notifications } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -37,18 +37,37 @@ export async function postCommentAction(
     return { ok: false, error: "rate_limited" };
   }
 
+  let insertedId: string | null = null;
   try {
     if (type === "matchup") {
-      await db.insert(matchupComments).values({
-        matchupId: targetId, userId, body: trimmed, parentId: parentId ?? null,
-      });
+      const [row] = await db.insert(matchupComments)
+        .values({ matchupId: targetId, userId, body: trimmed, parentId: parentId ?? null })
+        .returning({ id: matchupComments.id });
+      insertedId = row?.id ?? null;
     } else {
-      await db.insert(entityComments).values({
-        entityId: targetId, userId, body: trimmed, parentId: parentId ?? null,
-      });
+      const [row] = await db.insert(entityComments)
+        .values({ entityId: targetId, userId, body: trimmed, parentId: parentId ?? null })
+        .returning({ id: entityComments.id });
+      insertedId = row?.id ?? null;
     }
   } catch {
     return { ok: false, error: "db_error" };
+  }
+
+  // Notify parent comment author on reply (skip self-reply)
+  if (parentId && insertedId) {
+    try {
+      const table = type === "matchup" ? matchupComments : entityComments;
+      const [parent] = await db.select({ userId: table.userId }).from(table).where(eq(table.id, parentId)).limit(1);
+      if (parent && parent.userId !== userId) {
+        await db.insert(notifications).values({
+          userId:        parent.userId,
+          type:          "reply_to_comment",
+          referenceId:   insertedId,
+          referenceType: type === "matchup" ? "matchup_comment" : "entity_comment",
+        });
+      }
+    } catch { /* notification failure must not break the comment post */ }
   }
 
   const path = type === "matchup" ? `/battles/${targetSlug}` : `/characters/${targetSlug}`;
@@ -76,6 +95,7 @@ export async function toggleCommentVoteAction(
       ))
       .limit(1);
 
+    const wasVoted = !!existing;
     if (existing?.value === value) {
       await db.delete(commentVotes).where(eq(commentVotes.id, existing.id));
     } else {
@@ -86,6 +106,32 @@ export async function toggleCommentVoteAction(
           target: [commentVotes.commentId, commentVotes.commentType, commentVotes.userId],
           set: { value },
         });
+
+      // Notify comment author on first upvote (dedup: one notification per comment per recipient)
+      if (value === 1 && !wasVoted) {
+        try {
+          const table = commentType === "matchup" ? matchupComments : entityComments;
+          const [comment] = await db.select({ userId: table.userId }).from(table).where(eq(table.id, commentId)).limit(1);
+          if (comment && comment.userId !== session.user.id) {
+            const refType = commentType === "matchup" ? "matchup_comment" : "entity_comment";
+            const [already] = await db
+              .select({ id: notifications.id })
+              .from(notifications)
+              .where(and(
+                eq(notifications.userId, comment.userId),
+                eq(notifications.type, "comment_upvoted"),
+                eq(notifications.referenceId, commentId),
+              ))
+              .limit(1);
+            if (!already) {
+              await db.insert(notifications).values({
+                userId: comment.userId, type: "comment_upvoted",
+                referenceId: commentId, referenceType: refType,
+              });
+            }
+          }
+        } catch { /* notification failure must not break the vote */ }
+      }
     }
   } catch {
     return { ok: false };

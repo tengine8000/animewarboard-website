@@ -3,9 +3,9 @@ import {
   matchups, matchupParticipants, entityVariants, entities, categories,
   votes, anonymousVotes, attributes, entityStats, communityEntityStats,
   voteAttributes, matchupComments, entityComments, commentVotes, users,
-  pointTransactions, analyticsEvents,
+  pointTransactions, analyticsEvents, notifications,
 } from "@/db/schema";
-import { eq, desc, asc, sql, count, and, isNull, ilike, inArray } from "drizzle-orm";
+import { eq, desc, asc, sql, count, and, isNull, ilike, inArray, or } from "drizzle-orm";
 import { getRankFromXp } from "@/lib/ranks";
 import { getAdminSettings } from "@/lib/points";
 import { redis } from "@/lib/redis";
@@ -1013,4 +1013,62 @@ async function _getAdminDashboardStats(): Promise<AdminDashboardStats> {
       conversionRate:   uniqueSessions > 0 ? ((regVisitors / uniqueSessions) * 100).toFixed(1) + "%" : "0%",
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+export type NotificationRow = {
+  id: string;
+  type: string;
+  read: boolean;
+  referenceId: string | null;
+  referenceType: string | null;
+  createdAt: string;
+  actorName: string | null;
+  contextSlug: string | null;
+  bodyExcerpt: string | null;
+};
+
+export async function getUnreadNotificationCount(userId: string): Promise<number> {
+  const [row] = await db
+    .select({ count: count() })
+    .from(notifications)
+    .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
+  return Number(row?.count ?? 0);
+}
+
+export async function getNotifications(userId: string, limit = 30): Promise<NotificationRow[]> {
+  const raw = await db.execute(sql`
+    SELECT
+      n.id,
+      n.type,
+      n.read,
+      n.reference_id   AS "referenceId",
+      n.reference_type AS "referenceType",
+      n.created_at     AS "createdAt",
+      COALESCE(u_mc.name, u_ec.name) AS "actorName",
+      CASE
+        WHEN n.reference_type = 'matchup_comment' THEN mp.slug
+        WHEN n.reference_type = 'entity_comment'  THEN ent_ec.slug
+        WHEN n.reference_type = 'entity'           THEN ent.slug
+      END AS "contextSlug",
+      CASE
+        WHEN n.reference_type = 'matchup_comment' THEN LEFT(mc.body, 80)
+        WHEN n.reference_type = 'entity_comment'  THEN LEFT(ec.body, 80)
+      END AS "bodyExcerpt"
+    FROM notifications n
+    LEFT JOIN matchup_comments mc  ON n.reference_type = 'matchup_comment' AND mc.id = n.reference_id
+    LEFT JOIN users u_mc           ON mc.user_id = u_mc.id
+    LEFT JOIN matchups mp          ON mc.matchup_id = mp.id
+    LEFT JOIN entity_comments ec   ON n.reference_type = 'entity_comment'  AND ec.id = n.reference_id
+    LEFT JOIN users u_ec           ON ec.user_id = u_ec.id
+    LEFT JOIN entities ent_ec      ON ec.entity_id = ent_ec.id
+    LEFT JOIN entities ent         ON n.reference_type = 'entity'           AND ent.id = n.reference_id
+    WHERE n.user_id = ${userId}
+    ORDER BY n.created_at DESC
+    LIMIT ${limit}
+  `);
+  return raw as unknown as NotificationRow[];
 }

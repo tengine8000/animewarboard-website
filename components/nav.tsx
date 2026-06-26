@@ -4,10 +4,13 @@ import { auth } from "@/auth";
 import { ThemeToggle } from "./theme-toggle";
 import { SearchBar } from "./search-bar";
 import { MobileMenuButton } from "./mobile-menu";
+import { NotificationBell } from "./notification-bell";
+import { getUnreadNotificationCount } from "@/lib/queries";
 
 export async function Nav() {
   const session = await auth();
   const user = session?.user;
+  const unreadCount = user?.id ? await getUnreadNotificationCount(user.id) : 0;
 
   return (
     <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg)]/90 backdrop-blur-sm">
@@ -51,6 +54,8 @@ export async function Nav() {
 
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
+
+          {user && <NotificationBell initialCount={unreadCount} />}
 
           {/* Desktop auth — hidden on mobile (accessible via hamburger drawer) */}
           {user ? (
