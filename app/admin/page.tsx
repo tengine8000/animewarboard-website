@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getAdminDashboardStats } from "@/lib/queries";
-import { Settings, TrendingUp, Users, Swords, BarChart2 } from "lucide-react";
+import { Settings, TrendingUp, Users, Swords, BarChart2, PlusCircle, UserCog, Inbox } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Admin Dashboard" };
@@ -59,6 +59,42 @@ export default async function AdminDashboardPage() {
           Settings
         </Link>
       </div>
+
+      {/* Quick Actions */}
+      <section className="space-y-3">
+        <h2 className="text-[10px] font-black tracking-widest uppercase" style={{ color: "var(--color-text-ghost)" }}>
+          Content & Moderation
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { href: "/admin/characters/new", icon: PlusCircle, label: "Add Character",   color: "var(--color-accent)" },
+            { href: "/admin/series/new",     icon: PlusCircle, label: "Add Series",      color: "var(--color-accent)" },
+            { href: "/admin/submissions",    icon: Inbox,       label: "Submissions",    color: "#818cf8" },
+            { href: "/admin/users",          icon: UserCog,     label: "Manage Users",   color: "#22c55e" },
+          ].map(({ href, icon: Icon, label, color }) => (
+            <Link
+              key={href}
+              href={href}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "12px 14px",
+                borderRadius: "10px",
+                border: "1px solid var(--color-border)",
+                background: "var(--color-surface)",
+                fontSize: "13px",
+                fontWeight: 800,
+                color: "var(--color-text-base)",
+                textDecoration: "none",
+              }}
+            >
+              <Icon size={14} style={{ color, flexShrink: 0 }} />
+              {label}
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {/* Primary KPIs */}
       <section className="space-y-3">

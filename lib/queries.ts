@@ -1031,6 +1031,75 @@ export type NotificationRow = {
   bodyExcerpt: string | null;
 };
 
+// ---------------------------------------------------------------------------
+// Admin content helpers
+// ---------------------------------------------------------------------------
+
+export async function getAnimeAttributes() {
+  const [anime] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(and(isNull(categories.parentId), eq(categories.slug, "anime")))
+    .limit(1);
+  if (!anime) return [];
+  return db
+    .select({ id: attributes.id, name: attributes.name, slug: attributes.slug, sortOrder: attributes.sortOrder })
+    .from(attributes)
+    .where(eq(attributes.categoryId, anime.id))
+    .orderBy(asc(attributes.sortOrder));
+}
+
+export async function getPendingEntities() {
+  return db.execute(sql`
+    SELECT
+      e.id,
+      e.name,
+      e.slug,
+      e.image_url      AS "imageUrl",
+      e.created_at     AS "createdAt",
+      c.name           AS "seriesName",
+      u.name           AS "creatorName",
+      u.email          AS "creatorEmail"
+    FROM entities e
+    LEFT JOIN categories c ON e.category_id = c.id
+    LEFT JOIN users u      ON e.created_by  = u.id
+    WHERE e.status = 'pending'
+    ORDER BY e.created_at ASC
+  `) as unknown as Array<{
+    id: string; name: string; slug: string; imageUrl: string | null;
+    createdAt: string; seriesName: string | null;
+    creatorName: string | null; creatorEmail: string | null;
+  }>;
+}
+
+export async function getAdminUserList(search: string, limit = 30, offset = 0) {
+  return db.execute(sql`
+    SELECT
+      u.id,
+      u.name,
+      u.email,
+      u.role,
+      u.is_patron      AS "isPatron",
+      u.restricted_until AS "restrictedUntil",
+      u.created_at     AS "createdAt",
+      COALESCE(SUM(pt.amount) FILTER (WHERE pt.amount > 0), 0) AS xp
+    FROM users u
+    LEFT JOIN point_transactions pt ON pt.user_id = u.id
+    WHERE (${search} = '' OR u.name ILIKE ${'%' + search + '%'} OR u.email ILIKE ${'%' + search + '%'})
+    GROUP BY u.id
+    ORDER BY u.created_at DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `) as unknown as Array<{
+    id: string; name: string | null; email: string;
+    role: string; isPatron: boolean; restrictedUntil: string | null;
+    createdAt: string; xp: number;
+  }>;
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
 export async function getUnreadNotificationCount(userId: string): Promise<number> {
   const [row] = await db
     .select({ count: count() })
