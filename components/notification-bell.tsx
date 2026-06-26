@@ -129,7 +129,7 @@ export function NotificationBell({ initialCount }: { initialCount: number }) {
         )}
       </button>
 
-      {mounted && createPortal(
+      {mounted && open && createPortal(
         <>
           {/* Backdrop */}
           <div
@@ -140,9 +140,7 @@ export function NotificationBell({ initialCount }: { initialCount: number }) {
               inset: 0,
               zIndex: 49,
               background: "rgba(0,0,0,0.4)",
-              opacity: open ? 1 : 0,
-              pointerEvents: open ? "auto" : "none",
-              transition: "opacity 200ms ease",
+              animation: "awbFadeIn 200ms ease forwards",
             }}
           />
 
@@ -164,10 +162,7 @@ export function NotificationBell({ initialCount }: { initialCount: number }) {
               border: "1px solid var(--color-border)",
               borderRadius: "16px",
               overflow: "hidden",
-              opacity: open ? 1 : 0,
-              transform: open ? "translateY(0) scale(1)" : "translateY(-8px) scale(0.97)",
-              pointerEvents: open ? "auto" : "none",
-              transition: "opacity 200ms ease, transform 200ms ease",
+              animation: "awbScaleIn 200ms ease forwards",
             }}
           >
             {/* Header */}

@@ -54,10 +54,9 @@ export function MobileMenuButton({ user }: { user: User | null }) {
         <Menu size={18} />
       </button>
 
-      {/* Backdrop + drawer rendered into document.body via portal.
-          This escapes the <header>'s backdrop-filter stacking context,
-          which would otherwise clip position:fixed children to 56px. */}
-      {mounted && createPortal(
+      {/* Portal renders only when open — avoids always-present fixed overlay that
+          intercepts touch events on iOS Safari even with pointer-events:none */}
+      {mounted && open && createPortal(
         <>
         <div
         aria-hidden="true"
@@ -68,9 +67,7 @@ export function MobileMenuButton({ user }: { user: User | null }) {
           zIndex: 49,
           background: "rgba(0,0,0,0.65)",
           backdropFilter: "blur(2px)",
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? "auto" : "none",
-          transition: "opacity 280ms ease",
+          animation: "awbFadeIn 280ms ease forwards",
         }}
       />
 
@@ -90,8 +87,7 @@ export function MobileMenuButton({ user }: { user: User | null }) {
           flexDirection: "column",
           background: "var(--color-bg)",
           borderRight: "1px solid var(--color-border)",
-          transform: open ? "translateX(0)" : "translateX(-100%)",
-          transition: "transform 300ms cubic-bezier(0.4, 0, 0.2, 1)",
+          animation: "awbSlideInLeft 300ms cubic-bezier(0.4, 0, 0.2, 1) forwards",
         }}
       >
         {/* Drawer header */}

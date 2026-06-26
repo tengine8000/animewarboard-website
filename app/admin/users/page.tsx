@@ -249,17 +249,28 @@ function RestrictForm({ userId, restrictedUntil }: { userId: string; restrictedU
 function AdjustForm({ userId }: { userId: string }) {
   async function action(fd: FormData): Promise<void> {
     "use server";
-    const amount = parseInt(fd.get("amount") as string, 10);
+    const sign   = fd.get("sign") === "deduct" ? -1 : 1;
+    const amount = Math.abs(parseInt(fd.get("amount") as string, 10));
     const note   = (fd.get("note") as string) ?? "";
-    await manualPointAdjustAction(userId, amount, note);
+    await manualPointAdjustAction(userId, sign * amount, note);
   }
+
+  const fieldStyle = { padding: "5px 8px", borderRadius: "6px", border: "1px solid var(--color-border)", background: "var(--color-bg)", color: "var(--color-text-base)", fontSize: "11px" } as const;
+
   return (
     <form action={action} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      <input type="number" name="amount" placeholder="±XP (negative to deduct)" required style={{ padding: "5px 8px", borderRadius: "6px", border: "1px solid var(--color-border)", background: "var(--color-bg)", color: "var(--color-text-base)", fontSize: "11px" }} />
-      <input type="text" name="note" placeholder="Reason (required)" required style={{ padding: "5px 8px", borderRadius: "6px", border: "1px solid var(--color-border)", background: "var(--color-bg)", color: "var(--color-text-base)", fontSize: "11px" }} />
-      <button type="submit" style={{ padding: "5px 12px", borderRadius: "6px", background: "var(--color-accent)", color: "#fff", fontSize: "11px", fontWeight: 800, cursor: "pointer", border: "none", alignSelf: "flex-end" }}>
-        Apply
-      </button>
+      <input type="number" name="amount" min="1" placeholder="Amount" required style={fieldStyle} />
+      <input type="text" name="note" placeholder="Reason (required)" required style={fieldStyle} />
+      <div style={{ display: "flex", gap: "6px" }}>
+        <button type="submit" name="sign" value="award"
+          style={{ flex: 1, padding: "6px", borderRadius: "6px", fontSize: "11px", fontWeight: 800, cursor: "pointer", background: "color-mix(in srgb, #22c55e 15%, transparent)", border: "1px solid #22c55e40", color: "#22c55e" }}>
+          + Award
+        </button>
+        <button type="submit" name="sign" value="deduct"
+          style={{ flex: 1, padding: "6px", borderRadius: "6px", fontSize: "11px", fontWeight: 800, cursor: "pointer", background: "color-mix(in srgb, #ef4444 10%, transparent)", border: "1px solid #ef444430", color: "#ef4444" }}>
+          − Deduct
+        </button>
+      </div>
     </form>
   );
 }
