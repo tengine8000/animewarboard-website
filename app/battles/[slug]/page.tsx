@@ -1,12 +1,24 @@
 export const dynamic = "force-dynamic";
 
-import { getMatchupBySlug, deriveSideLabel } from "@/lib/queries";
+import {
+  getMatchupBySlug,
+  deriveSideLabel,
+  getMatchupRadarStats,
+  getUserVoteForMatchup,
+  getUserVoteAttributes,
+  getMatchupCommunityEdge,
+  getMatchupCommunityStatAverages,
+  getMatchupComments,
+} from "@/lib/queries";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { FighterCarousel } from "@/components/fighter-carousel";
-import { Swords, Lock } from "lucide-react";
-import type { Metadata } from "next";
+import Image from "next/image";
 import { auth } from "@/auth";
+import { DynamicRadarChart } from "@/components/dynamic-radar-chart";
+import { BattleVoteForm } from "@/components/battle-vote-form";
+import { PredictionConfidence } from "@/components/prediction-confidence";
+import { CommentSection } from "@/components/comment-section";
+import type { Metadata } from "next";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -19,252 +31,289 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${labelA} vs ${labelB}`,
     description: `Who wins? ${labelA} vs ${labelB} — make your prediction on AnimeWarBoard.`,
-    openGraph: {
-      title: `${labelA} vs ${labelB} | AnimeWarBoard`,
-      description: `${data.voteSummary.total.toLocaleString()} community predictions. Make yours.`,
-    },
   };
 }
 
-export default async function BattlePage({ params }: Props) {
-  const { slug } = await params;
-  const [data, session] = await Promise.all([
-    getMatchupBySlug(slug),
-    auth(),
-  ]);
-  if (!data) notFound();
+// ── Clipped-corner card ───────────────────────────────────────────────────────
 
-  const { sideA, sideB, sideALabel, sideBLabel, voteSummary } = data;
-  const labelA = deriveSideLabel(sideALabel, sideA);
-  const labelB = deriveSideLabel(sideBLabel, sideB);
-  const isLoggedIn = !!session?.user;
+const CLIP = "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)";
 
+function ClipCard({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-
-      {/* Breadcrumb */}
-      <nav className="text-sm text-[var(--color-text-muted)]">
-        <Link href="/battles" className="hover:text-[var(--color-accent)]">Battles</Link>
-        <span className="mx-2">/</span>
-        <span className="text-[var(--color-text-base)] line-clamp-1">{labelA} vs {labelB}</span>
-      </nav>
-
-      {/* Battle Overview Card */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden">
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--color-border)]">
-          <p className="text-xs font-bold tracking-widest text-[var(--color-text-muted)] uppercase">
-            Battle Overview
-          </p>
-          {voteSummary.total > 0 && (
-            <span className="flex items-center gap-1.5 text-[10px] font-bold tracking-widest text-[var(--color-accent)] uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-pulse" />
-              {voteSummary.total.toLocaleString()} Predictions
-            </span>
-          )}
-        </div>
-
-        {/* Fighter panels */}
-        <div className="grid grid-cols-3 gap-4 px-5 py-8 items-center">
-          <FighterCarousel participants={sideA} side="a" label={labelA} />
-
-          {/* Center — VS + community metrics */}
-          <div className="flex flex-col items-center gap-4">
-            <span className="text-[var(--color-accent)] font-black text-3xl tracking-widest">VS</span>
-
-            {/* Vote split bar */}
-            {voteSummary.total > 0 && (
-              <div className="w-full space-y-1">
-                <div className="flex h-2 rounded-full overflow-hidden">
-                  <div className="bg-[var(--color-side-a)] transition-all" style={{ width: `${voteSummary.aPercent}%` }} />
-                  {voteSummary.drawPercent > 0 && (
-                    <div className="bg-[var(--color-text-muted)] transition-all" style={{ width: `${voteSummary.drawPercent}%` }} />
-                  )}
-                  <div className="bg-[var(--color-side-b)] transition-all" style={{ width: `${voteSummary.bPercent}%` }} />
-                </div>
-                <div className="flex justify-between text-[10px] font-semibold">
-                  <span style={{ color: "var(--color-side-a)" }}>{voteSummary.aPercent}%</span>
-                  <span style={{ color: "var(--color-side-b)" }}>{voteSummary.bPercent}%</span>
-                </div>
-              </div>
-            )}
-
-            {/* Settled / Contested badge */}
-            {voteSummary.settled && (
-              <span className="text-[10px] font-bold text-emerald-500 tracking-widest uppercase border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                Settled
-              </span>
-            )}
-            {voteSummary.contested && (
-              <span className="text-[10px] font-bold text-amber-500 tracking-widest uppercase border border-amber-500/30 px-2 py-0.5 rounded-full">
-                Contested
-              </span>
-            )}
-          </div>
-
-          <FighterCarousel participants={sideB} side="b" label={labelB} />
-        </div>
-
-        {/* Community metrics */}
-        {voteSummary.total > 0 && (
-          <div className="grid grid-cols-2 border-t border-[var(--color-border)] divide-x divide-[var(--color-border)]">
-            <div className="px-5 py-4 text-center">
-              <p className="text-[10px] font-bold tracking-widest text-[var(--color-text-muted)] uppercase mb-1">Community Edge</p>
-              <p className="text-lg font-black text-[var(--color-side-a)]">
-                {labelA} {voteSummary.aPercent}%
-              </p>
-              <p className="text-[10px] text-[var(--color-text-ghost)]">Overall community lean</p>
-            </div>
-            <div className="px-5 py-4 text-center">
-              <p className="text-[10px] font-bold tracking-widest text-[var(--color-text-muted)] uppercase mb-1">Prediction Confidence</p>
-              <p className="text-lg font-black text-[var(--color-gold)]">—</p>
-              <p className="text-[10px] text-[var(--color-text-ghost)]">Submit your pick to see yours</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Prediction Form */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden">
-
-        {/* 1. Verdict */}
-        <div className="px-5 py-5 border-b border-[var(--color-border)]">
-          <p className="text-xs font-bold tracking-widest text-[var(--color-text-muted)] uppercase mb-4">
-            1. How will this battle end?
-          </p>
-          <div className="grid grid-cols-3 gap-3">
-            <VerdictButton label={`${labelA} Wins`} side="a" disabled={!isLoggedIn} />
-            <VerdictButton label={`${labelB} Wins`} side="b" disabled={!isLoggedIn} />
-            <VerdictButton label="Draw" side="draw" disabled={!isLoggedIn} />
-          </div>
-        </div>
-
-        {/* 2. Difficulty */}
-        <div className="px-5 py-5 border-b border-[var(--color-border)]">
-          <p className="text-xs font-bold tracking-widest text-[var(--color-text-muted)] uppercase mb-4">
-            2. How difficult is this battle?
-          </p>
-          <div className="flex gap-2 flex-wrap">
-            {(["Very Easy", "Easy", "Medium", "Hard", "Extreme"] as const).map((d, i) => (
-              <button key={d} disabled={!isLoggedIn}
-                className="flex-1 min-w-[72px] px-3 py-2 rounded-xl border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                <span className="text-[var(--color-text-ghost)] text-xs block">{i + 1}</span>
-                {d}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 3. Justify Your Pick */}
-        <div className="px-5 py-5 border-b border-[var(--color-border)]">
-          <div className="flex items-center gap-2 mb-4">
-            <p className="text-xs font-bold tracking-widest text-[var(--color-text-muted)] uppercase">
-              3. Justify Your Pick
-            </p>
-            <span className="text-[10px] text-[var(--color-text-ghost)] border border-[var(--color-border)] px-2 py-0.5 rounded-full">
-              Sergeant+ rank required
-            </span>
-          </div>
-
-          {/* Stat slider rows */}
-          {[
-            { label: "Speed",        emoji: "⚡" },
-            { label: "IQ / Battle IQ", emoji: "🧠" },
-            { label: "Strength",     emoji: "💪" },
-            { label: "Durability",   emoji: "🛡️" },
-            { label: "Stamina",      emoji: "❤️" },
-            { label: "Hax / Abilities", emoji: "✨" },
-            { label: "Power",        emoji: "🔥" },
-            { label: "EXP / Battle IQ", emoji: "📖" },
-            { label: "Versatility",  emoji: "🌀" },
-          ].map(({ label, emoji }) => (
-            <div key={label} className="flex items-center gap-3 py-2">
-              <span className="w-5 text-center text-sm shrink-0">{emoji}</span>
-              <span className="text-xs font-semibold text-[var(--color-text-muted)] w-28 shrink-0">{label}</span>
-              <div className="flex-1 h-1.5 bg-[var(--color-border)] rounded-full overflow-hidden">
-                <div className="h-full w-1/2 bg-gradient-to-r from-[var(--color-side-a)] to-[var(--color-side-b)]" />
-              </div>
-              <span className="text-[10px] text-[var(--color-text-ghost)] w-6 text-center shrink-0">50</span>
-            </div>
-          ))}
-          {!isLoggedIn && (
-            <p className="text-xs text-[var(--color-text-ghost)] mt-2 text-center">
-              Sign in to adjust stats
-            </p>
-          )}
-        </div>
-
-        {/* Gate / Submit */}
-        <div className="px-5 py-4 flex items-center justify-between gap-4">
-          {isLoggedIn ? (
-            <>
-              <button className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-base)] transition-colors">
-                Reset
-              </button>
-              <button className="bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-black px-8 py-3 rounded-xl text-sm tracking-wide transition-colors flex items-center gap-2">
-                <Swords size={14} />
-                SUBMIT PREDICTION
-              </button>
-            </>
-          ) : (
-            <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3">
-              <p className="text-sm text-[var(--color-text-muted)] flex items-center gap-2">
-                <Lock size={14} className="text-[var(--color-text-ghost)]" />
-                Sign in to submit your prediction
-              </p>
-              <div className="flex gap-2">
-                <Link href="/login"
-                  className="text-sm font-semibold border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-base)] px-4 py-2 rounded-xl transition-colors">
-                  Sign In
-                </Link>
-                <Link href="/register"
-                  className="text-sm font-black bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-4 py-2 rounded-xl transition-colors flex items-center gap-2">
-                  <Swords size={13} />
-                  JOIN FREE
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Comments placeholder */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl px-5 py-5">
-        <h2 className="text-sm font-black tracking-widest text-[var(--color-text-muted)] uppercase mb-4">
-          Community Discussion
-        </h2>
-        <div className="border border-dashed border-[var(--color-border)] rounded-xl py-10 text-center">
-          <p className="text-sm text-[var(--color-text-muted)]">Comments coming soon.</p>
-          {!isLoggedIn && (
-            <Link href="/register" className="text-xs text-[var(--color-accent)] hover:underline mt-1 block">
-              Join to be first to comment
-            </Link>
-          )}
-        </div>
+    <div style={{ clipPath: CLIP, background: "var(--color-border)", padding: "1px", ...style }}>
+      <div style={{ clipPath: CLIP, background: "var(--color-surface)" }}>
+        {children}
       </div>
     </div>
   );
 }
 
-function VerdictButton({
-  label, side, disabled,
+// ── Fighter panel ─────────────────────────────────────────────────────────────
+
+type Participant = {
+  entity:  { name: string; slug: string; imageUrl: string | null };
+  variant: { name: string; imageUrl: string | null };
+  series:  { name: string };
+};
+
+function FighterPanel({
+  participant, side, align,
 }: {
-  label: string;
-  side: "a" | "b" | "draw";
-  disabled: boolean;
+  participant: Participant | undefined;
+  side: "a" | "b";
+  align: "left" | "right";
 }) {
-  const colors: Record<string, string> = {
-    a:    "border-[var(--color-side-a)] hover:bg-[var(--color-side-a-bg)] hover:text-[var(--color-side-a)]",
-    b:    "border-[var(--color-side-b)] hover:bg-[var(--color-side-b-bg)] hover:text-[var(--color-side-b)]",
-    draw: "border-[var(--color-border)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]",
-  };
+  if (!participant) return <div />;
+
+  const image = participant.variant.imageUrl ?? participant.entity.imageUrl;
+  const color = side === "a" ? "var(--color-side-a)" : "var(--color-side-b)";
+  const glow  = side === "a"
+    ? "0 0 0 2px rgba(248,113,113,0.3), 0 0 14px rgba(248,113,113,0.25)"
+    : "0 0 0 2px rgba(96,165,250,0.3),  0 0 14px rgba(96,165,250,0.25)";
+  const ta = align === "right" ? "right" as const : "left" as const;
+  const ai = align === "right" ? "flex-end" : "flex-start";
+
   return (
-    <button
-      disabled={disabled}
-      className={`w-full py-3 rounded-xl border font-bold text-sm text-[var(--color-text-muted)] transition-all disabled:opacity-40 disabled:cursor-not-allowed ${colors[side]}`}
-    >
-      {label}
-    </button>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: ai, gap: 5, minWidth: 0 }}>
+      {/* FIGHTER A/B label */}
+      <p style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.1em", color, textAlign: ta, textTransform: "uppercase" }}>
+        Fighter {side.toUpperCase()}
+      </p>
+
+      {/* Avatar */}
+      <div style={{
+        width: 72, height: 72, borderRadius: "50%", overflow: "hidden", position: "relative", flexShrink: 0,
+        border: `2px solid ${color}`, boxShadow: glow,
+      }}>
+        {image ? (
+          <Image src={image} alt={participant.entity.name} fill sizes="72px" className="object-cover object-top" />
+        ) : (
+          <div style={{
+            width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 26, fontWeight: 900,
+            background: `color-mix(in srgb, ${color} 15%, transparent)`, color,
+          }}>
+            {participant.entity.name[0]}
+          </div>
+        )}
+      </div>
+
+      {/* Entity name (large) */}
+      <Link
+        href={`/characters/${participant.entity.slug}`}
+        style={{ color, fontWeight: 900, fontSize: 13, lineHeight: 1.2, textAlign: ta, wordBreak: "break-word" }}
+        className="hover:underline"
+      >
+        {participant.entity.name}
+      </Link>
+
+      {/* Variant name (smaller, muted) */}
+      <p style={{ fontSize: 10, color: "var(--color-text-ghost)", textAlign: ta, lineHeight: 1.2 }}>
+        {participant.variant.name}
+      </p>
+
+      {/* Series */}
+      <p style={{ fontSize: 9, color: "var(--color-text-muted)", textAlign: ta, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        {participant.series.name}
+      </p>
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+export default async function BattlePage({ params }: Props) {
+  const { slug } = await params;
+  const [data, session] = await Promise.all([getMatchupBySlug(slug), auth()]);
+  if (!data) notFound();
+
+  const { sideA, sideB, sideALabel, sideBLabel, voteSummary, matchup } = data;
+  const labelA = deriveSideLabel(sideALabel, sideA);
+  const labelB = deriveSideLabel(sideBLabel, sideB);
+  const isLoggedIn = !!session?.user?.id;
+
+  const [radarStats, existingVote, existingStatValues, communityEdge, communityStats, comments] = await Promise.all([
+    getMatchupRadarStats(sideA, sideB),
+    isLoggedIn ? getUserVoteForMatchup(session!.user!.id!, matchup.id) : null,
+    isLoggedIn ? getUserVoteAttributes(session!.user!.id!, matchup.id) : {},
+    getMatchupCommunityEdge(matchup.id),
+    getMatchupCommunityStatAverages(matchup.id),
+    getMatchupComments(matchup.id),
+  ]);
+
+  const summary = voteSummary;
+  const firstA  = sideA[0] as Participant | undefined;
+  const firstB  = sideB[0] as Participant | undefined;
+  const imageA  = firstA?.variant.imageUrl ?? firstA?.entity.imageUrl ?? null;
+  const imageB  = firstB?.variant.imageUrl ?? firstB?.entity.imageUrl ?? null;
+
+  return (
+    <div className="max-w-2xl mx-auto px-4 py-6 space-y-3">
+
+      {/* Breadcrumb */}
+      <nav className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+        <Link href="/battles" className="hover:underline">Battles</Link>
+        <span className="mx-2">/</span>
+        <span style={{ color: "var(--color-text-base)" }} className="line-clamp-1">
+          {labelA} vs {labelB}
+        </span>
+      </nav>
+
+      {/* ── BATTLE OVERVIEW ───────────────────────────────────────────── */}
+      {/* Sticky wrapper: solid bg covers clip-path transparent corners */}
+      <div style={{ position: "sticky", top: 56, zIndex: 20, background: "var(--color-bg)" }}>
+      <ClipCard>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-3"
+          style={{ borderBottom: "1px solid var(--color-border)" }}>
+          <span className="text-[10px] font-black tracking-widest uppercase" style={{ color: "var(--color-text-muted)" }}>
+            Battle Overview
+          </span>
+          <span className="flex items-center gap-1.5 text-[10px] font-black tracking-widest uppercase text-emerald-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Live
+          </span>
+        </div>
+
+        {/* Fighter A | Radar + legend | Fighter B */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "90px 1fr 90px",
+          alignItems: "center", gap: 8, padding: "16px 14px",
+        }}>
+          <FighterPanel participant={firstA} side="a" align="left" />
+
+          {/* Chart + legend stacked */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <DynamicRadarChart defaultStatsA={radarStats.a} defaultStatsB={radarStats.b} communityStats={communityStats} size={300} />
+            {/* Color legend */}
+            <div style={{ display: "flex", gap: 12 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--color-side-a)", fontSize: 9, fontWeight: 800, letterSpacing: "0.07em" }}>
+                <span style={{ width: 20, height: 2, background: "var(--color-side-a)", display: "inline-block", flexShrink: 0 }} />
+                FIGHTER A
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--color-side-b)", fontSize: 9, fontWeight: 800, letterSpacing: "0.07em" }}>
+                <span style={{ width: 20, height: 2, background: "var(--color-side-b)", display: "inline-block", flexShrink: 0 }} />
+                FIGHTER B
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4, color: "rgba(255,255,255,0.75)", fontSize: 9, fontWeight: 800, letterSpacing: "0.07em" }}>
+                <span style={{ width: 20, height: 0, borderTop: "1.5px dashed rgba(255,255,255,0.75)", display: "inline-block", flexShrink: 0 }} />
+                COMMUNITY
+              </span>
+            </div>
+          </div>
+
+          <FighterPanel participant={firstB} side="b" align="right" />
+        </div>
+
+        {/* Community Edge + Prediction Confidence */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderTop: "1px solid var(--color-border)" }}>
+          {/* Community Edge — driven by vote_attributes avg score_a */}
+          <div className="px-4 py-4" style={{ borderRight: "1px solid var(--color-border)" }}>
+            <p className="text-[9px] font-black tracking-widest uppercase mb-2" style={{ color: "var(--color-text-ghost)" }}>
+              Community Edge
+            </p>
+            {communityEdge.winner ? (
+              <>
+                <p className="text-[11px] font-black tracking-widest uppercase mb-0.5"
+                  style={{ color: communityEdge.winner === "a" ? "var(--color-side-a)" : "var(--color-side-b)" }}>
+                  Fighter {communityEdge.winner.toUpperCase()}
+                </p>
+                <p className="text-3xl font-black leading-none"
+                  style={{ color: communityEdge.winner === "a" ? "var(--color-side-a)" : "var(--color-side-b)" }}>
+                  +{communityEdge.edgePercent}%
+                </p>
+                <p className="text-[10px] mt-1" style={{ color: "var(--color-text-ghost)" }}>
+                  Overall Advantage
+                </p>
+                <p className="text-[9px] mt-0.5" style={{ color: "var(--color-text-ghost)" }}>
+                  {communityEdge.voterCount} {communityEdge.voterCount === 1 ? "vote" : "votes"}
+                </p>
+              </>
+            ) : (
+              <p className="text-xs" style={{ color: "var(--color-text-ghost)" }}>No slider data yet</p>
+            )}
+          </div>
+          {/* Prediction Confidence — real-time client computation */}
+          <div className="px-4 py-4">
+            <p className="text-[9px] font-black tracking-widest uppercase mb-2" style={{ color: "var(--color-text-ghost)" }}>
+              Prediction Confidence
+            </p>
+            <PredictionConfidence />
+          </div>
+        </div>
+
+        {/* Vote bar */}
+        {summary.total > 0 && (
+          <div className="px-5 py-3 space-y-1.5" style={{ borderTop: "1px solid var(--color-border)" }}>
+            <div className="flex justify-between text-[10px] font-black">
+              <span style={{ color: "var(--color-side-a)" }}>{summary.aPercent}%</span>
+              <span style={{ color: "var(--color-text-ghost)" }}>{summary.total.toLocaleString()} predictions</span>
+              <span style={{ color: "var(--color-side-b)" }}>{summary.bPercent}%</span>
+            </div>
+            <div className="flex h-1.5 overflow-hidden" style={{ borderRadius: 0 }}>
+              <div style={{ width: `${summary.aPercent}%`, background: "var(--color-side-a)", transition: "width 0.4s" }} />
+              {summary.drawPercent > 0 && <div style={{ width: `${summary.drawPercent}%`, background: "var(--color-text-ghost)" }} />}
+              <div style={{ flex: 1, background: "var(--color-side-b)" }} />
+            </div>
+            <div className="flex justify-between text-[9px]" style={{ color: "var(--color-text-ghost)" }}>
+              <span>Red</span>
+              {summary.drawPercent > 0 && <span>Draw {summary.drawPercent}%</span>}
+              <span>Blue</span>
+            </div>
+            {summary.settled && (
+              <p className="text-center text-[9px] font-black tracking-widest uppercase text-emerald-500">✓ Settled</p>
+            )}
+            {summary.contested && (
+              <p className="text-center text-[9px] font-black tracking-widest uppercase text-amber-500">⚡ Contested</p>
+            )}
+          </div>
+        )}
+      </ClipCard>
+      </div>
+
+      {/* ── Prediction Form ───────────────────────────────────────────── */}
+      <BattleVoteForm
+        matchupId={matchup.id}
+        matchupSlug={matchup.slug}
+        labelA={labelA}
+        labelB={labelB}
+        imageA={imageA}
+        imageB={imageB}
+        isLoggedIn={isLoggedIn}
+        existingVote={
+          existingVote
+            ? {
+                verdict:    existingVote.verdict    as "a" | "b" | "draw",
+                difficulty: existingVote.difficulty as "very_easy" | "easy" | "medium" | "hard" | "extreme",
+              }
+            : null
+        }
+        existingStatValues={existingStatValues}
+      />
+
+      {/* ── Community Discussion ──────────────────────────────────────── */}
+      <ClipCard>
+        <div className="px-5 py-3" style={{ borderBottom: "1px solid var(--color-border)" }}>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-black tracking-widest uppercase" style={{ color: "var(--color-text-muted)" }}>
+              Community Discussion
+            </p>
+            {comments.length > 0 && (
+              <span className="text-[10px]" style={{ color: "var(--color-text-ghost)" }}>
+                {comments.length} comment{comments.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+        </div>
+        <CommentSection
+          type="matchup"
+          targetId={matchup.id}
+          targetSlug={matchup.slug}
+          isLoggedIn={isLoggedIn}
+          userInitial={session?.user?.name?.[0]?.toUpperCase() ?? "?"}
+          comments={comments}
+        />
+      </ClipCard>
+    </div>
   );
 }

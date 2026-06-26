@@ -208,6 +208,7 @@ export const entities = pgTable("entities", {
   categoryId:     uuid("category_id").notNull().references(() => categories.id),
   name:           text("name").notNull(),
   slug:           text("slug").notNull().unique(),
+  bio:            text("bio"),
   imageUrl:       text("image_url"),
   imageSourceUrl: text("image_source_url"),
   status:         entityStatusEnum("status").notNull().default("pending"),

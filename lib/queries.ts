@@ -2,8 +2,9 @@ import { db } from "@/db";
 import {
   matchups, matchupParticipants, entityVariants, entities, categories,
   votes, anonymousVotes, attributes, entityStats, communityEntityStats,
+  voteAttributes, matchupComments, entityComments, commentVotes, users,
 } from "@/db/schema";
-import { eq, desc, asc, sql, count, and, isNull, isNotNull, ilike, or } from "drizzle-orm";
+import { eq, desc, asc, sql, count, and, isNull, ilike } from "drizzle-orm";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -47,7 +48,21 @@ export type VoteSummary = {
 
 export function deriveSideLabel(label: string | null, participants: Participant[]): string {
   if (label) return label;
-  return participants.map((p) => p.variant.name).join(" & ") || "TBD";
+  // For titles/breadcrumbs use entity name, not variant name
+  return participants.map((p) => p.entity.name).join(" & ") || "TBD";
+}
+
+export async function getUserVoteAttributes(
+  userId: string,
+  matchupId: string,
+): Promise<Record<string, number>> {
+  const rows = await db
+    .select({ slug: attributes.slug, scoreA: voteAttributes.scoreA })
+    .from(voteAttributes)
+    .innerJoin(attributes, eq(voteAttributes.attributeId, attributes.id))
+    .where(and(eq(voteAttributes.userId, userId), eq(voteAttributes.matchupId, matchupId)));
+
+  return Object.fromEntries(rows.map((r) => [r.slug, r.scoreA]));
 }
 
 async function fetchParticipants(matchupId: string): Promise<Participant[]> {
@@ -345,6 +360,7 @@ export async function getEntityBySlug(slug: string) {
       id:             entities.id,
       name:           entities.name,
       slug:           entities.slug,
+      bio:            entities.bio,
       imageUrl:       entities.imageUrl,
       imageSourceUrl: entities.imageSourceUrl,
       status:         entities.status,
@@ -420,6 +436,50 @@ export async function searchEntities(query: string, limit = 10) {
     .limit(limit);
 }
 
+// ---------------------------------------------------------------------------
+// Radar chart stats
+// ---------------------------------------------------------------------------
+
+export type RadarStat = { slug: string; name: string; sortOrder: number; value: number };
+
+export async function getMatchupRadarStats(
+  sideAParticipants: Participant[],
+  sideBParticipants: Participant[]
+): Promise<{ a: RadarStat[]; b: RadarStat[] }> {
+  const variantA = sideAParticipants[0]?.variant.id;
+  const variantB = sideBParticipants[0]?.variant.id;
+  if (!variantA || !variantB) return { a: [], b: [] };
+
+  const fetchStats = (variantId: string) =>
+    db
+      .select({
+        slug:      attributes.slug,
+        name:      attributes.name,
+        sortOrder: attributes.sortOrder,
+        value:     entityStats.value,
+      })
+      .from(entityStats)
+      .innerJoin(attributes, eq(entityStats.attributeId, attributes.id))
+      .where(eq(entityStats.variantId, variantId))
+      .orderBy(asc(attributes.sortOrder));
+
+  const [a, b] = await Promise.all([fetchStats(variantA), fetchStats(variantB)]);
+  return { a, b };
+}
+
+// ---------------------------------------------------------------------------
+// User vote
+// ---------------------------------------------------------------------------
+
+export async function getUserVoteForMatchup(userId: string, matchupId: string) {
+  const [vote] = await db
+    .select()
+    .from(votes)
+    .where(and(eq(votes.userId, userId), eq(votes.matchupId, matchupId)))
+    .limit(1);
+  return vote ?? null;
+}
+
 export async function searchCategories(query: string, limit = 5) {
   if (!query.trim()) return [];
   return db
@@ -427,4 +487,144 @@ export async function searchCategories(query: string, limit = 5) {
     .from(categories)
     .where(ilike(categories.name, `%${query}%`))
     .limit(limit);
+}
+
+// ---------------------------------------------------------------------------
+// Community Edge  (avg score_a across all vote_attributes for a matchup)
+// ---------------------------------------------------------------------------
+
+export type CommunityEdge = {
+  winner: "a" | "b" | null;
+  edgePercent: number;
+  voterCount: number;
+};
+
+export async function getMatchupCommunityEdge(matchupId: string): Promise<CommunityEdge> {
+  const [row] = await db
+    .select({
+      avgScoreA:  sql<string>`AVG(${voteAttributes.scoreA})`,
+      voterCount: sql<string>`COUNT(DISTINCT ${voteAttributes.userId})`,
+    })
+    .from(voteAttributes)
+    .where(eq(voteAttributes.matchupId, matchupId));
+
+  if (!row?.avgScoreA) return { winner: null, edgePercent: 0, voterCount: 0 };
+
+  const avg        = parseFloat(row.avgScoreA);
+  const voterCount = parseInt(row.voterCount, 10);
+  // edge: positive = Fighter A leads, negative = Fighter B leads
+  // e.g. avg=65 → 2*65-100 = +30, so Fighter A leads by 30%
+  const edge = Math.round(2 * avg - 100);
+
+  return {
+    winner:      edge > 0 ? "a" : edge < 0 ? "b" : null,
+    edgePercent: Math.abs(edge),
+    voterCount,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Community stat averages — per-attribute avg score_a for the amber polygon
+// ---------------------------------------------------------------------------
+
+export async function getMatchupCommunityStatAverages(matchupId: string): Promise<RadarStat[]> {
+  const rows = await db
+    .select({
+      slug:      attributes.slug,
+      name:      attributes.name,
+      sortOrder: attributes.sortOrder,
+      avgScoreA: sql<string>`AVG(${voteAttributes.scoreA})`,
+    })
+    .from(voteAttributes)
+    .innerJoin(attributes, eq(voteAttributes.attributeId, attributes.id))
+    .where(eq(voteAttributes.matchupId, matchupId))
+    .groupBy(attributes.id, attributes.slug, attributes.name, attributes.sortOrder)
+    .orderBy(asc(attributes.sortOrder));
+
+  if (rows.length === 0) return [];
+  return rows.map((r) => ({
+    slug:      r.slug,
+    name:      r.name,
+    sortOrder: r.sortOrder,
+    value:     Math.round(parseFloat(r.avgScoreA)),
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Matchup comments
+// ---------------------------------------------------------------------------
+
+export type CommentRow = {
+  id:        string;
+  body:      string;
+  createdAt: Date;
+  parentId:  string | null;
+  user:      { id: string; name: string | null; image: string | null };
+  score:     number;
+};
+
+async function fetchCommentVoteScores(commentIds: string[], type: "matchup" | "entity"): Promise<Record<string, number>> {
+  if (commentIds.length === 0) return {};
+  const scores = await db
+    .select({
+      commentId: commentVotes.commentId,
+      total:     sql<string>`SUM(${commentVotes.value})`,
+    })
+    .from(commentVotes)
+    .where(and(
+      eq(commentVotes.commentType, type),
+      sql`${commentVotes.commentId} = ANY(ARRAY[${sql.join(commentIds.map((id) => sql`${id}::uuid`), sql`, `)}])`
+    ))
+    .groupBy(commentVotes.commentId);
+  return Object.fromEntries(scores.map((s) => [s.commentId, parseInt(s.total, 10)]));
+}
+
+export async function getMatchupComments(matchupId: string): Promise<CommentRow[]> {
+  const rows = await db
+    .select({
+      id:        matchupComments.id,
+      body:      matchupComments.body,
+      createdAt: matchupComments.createdAt,
+      parentId:  matchupComments.parentId,
+      userId:    matchupComments.userId,
+      userName:  users.name,
+      userImage: users.image,
+    })
+    .from(matchupComments)
+    .innerJoin(users, eq(matchupComments.userId, users.id))
+    .where(eq(matchupComments.matchupId, matchupId))
+    .orderBy(desc(matchupComments.createdAt));
+
+  if (rows.length === 0) return [];
+  const scoreMap = await fetchCommentVoteScores(rows.map((r) => r.id), "matchup");
+  return rows.map((r) => ({
+    id: r.id, body: r.body, createdAt: r.createdAt, parentId: r.parentId,
+    user: { id: r.userId, name: r.userName, image: r.userImage },
+    score: scoreMap[r.id] ?? 0,
+  }));
+}
+
+export async function getEntityComments(entityId: string): Promise<CommentRow[]> {
+  const rows = await db
+    .select({
+      id:        entityComments.id,
+      body:      entityComments.body,
+      createdAt: entityComments.createdAt,
+      parentId:  entityComments.parentId,
+      userId:    entityComments.userId,
+      userName:  users.name,
+      userImage: users.image,
+    })
+    .from(entityComments)
+    .innerJoin(users, eq(entityComments.userId, users.id))
+    .where(eq(entityComments.entityId, entityId))
+    .orderBy(desc(entityComments.createdAt));
+
+  if (rows.length === 0) return [];
+  const scoreMap = await fetchCommentVoteScores(rows.map((r) => r.id), "entity");
+  return rows.map((r) => ({
+    id: r.id, body: r.body, createdAt: r.createdAt, parentId: r.parentId,
+    user: { id: r.userId, name: r.userName, image: r.userImage },
+    score: scoreMap[r.id] ?? 0,
+  }));
 }

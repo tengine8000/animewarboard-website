@@ -49,21 +49,21 @@
 
 .dark {
   /* Backgrounds — deep navy game theme */
-  --color-bg:                  #0d0f1a;
-  --color-surface:             rgba(17, 20, 38, 0.9);
-  --color-surface-hover:       rgba(26, 30, 55, 0.6);
+  --color-bg:                  #0b0d18;
+  --color-surface:             #161926;
+  --color-surface-hover:       #1e2235;
 
   /* Borders */
-  --color-border:              rgba(255, 255, 255, 0.08);
-  --color-border-muted:        rgba(255, 255, 255, 0.05);
-  --color-border-subtle:       rgba(255, 255, 255, 0.03);
+  --color-border:              #2a2f4a;
+  --color-border-muted:        #1e2235;
+  --color-border-subtle:       #171b2c;
 
   /* Text */
-  --color-text-base:           #f0f0ff;
-  --color-text-secondary:      #c8cadc;
-  --color-text-muted:          #8b8fa8;
-  --color-text-dim:            #5a5e78;
-  --color-text-ghost:          #3a3e58;
+  --color-text-base:           #e8eaf6;
+  --color-text-secondary:      #b8bdd6;
+  --color-text-muted:          #7c82a0;
+  --color-text-dim:            #565c7a;
+  --color-text-ghost:          #4a5070;
 
   /* Primary accent — battle orange (stays vibrant on dark) */
   --color-accent:              #f97316;
@@ -95,4 +95,57 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text-base);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+/* ── Animations ─────────────────────────────────────────────────────────── */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Battle stat sliders ────────────────────────────────────────────────── */
+.stat-slider::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 4px;
+  border-radius: 9999px;
+}
+.stat-slider::-moz-range-track {
+  background: transparent;
+  height: 4px;
+  border-radius: 9999px;
+}
+.stat-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+  width: 100%;
+  background: transparent;
+}
+.stat-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -8px; /* center 20px thumb on the 4px track: (4px - 20px) / 2 */
+  border-radius: 50%;
+  background: #1c1f2e;
+  cursor: pointer;
+  border: 2px solid rgba(255,255,255,0.85);
+  box-shadow: 0 0 3px rgba(255,255,255,0.8), 0 0 6px rgba(255,255,255,0.25);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.stat-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+  box-shadow: 0 0 4px rgba(255,255,255,0.9), 0 0 8px rgba(255,255,255,0.35);
+}
+.stat-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1c1f2e;
+  cursor: pointer;
+  border: 2px solid rgba(255,255,255,0.85);
+  box-shadow: 0 0 3px rgba(255,255,255,0.8), 0 0 6px rgba(255,255,255,0.25);
 }

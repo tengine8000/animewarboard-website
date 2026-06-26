@@ -1,7 +1,14 @@
-import { getAnimeSeries, getTopLevelCategories } from "@/lib/queries";
+import { getAnimeSeries } from "@/lib/queries";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+
+const SERIES_PALETTE: Record<string, string> = {
+  naruto:      "#f97316",
+  bleach:      "#6366f1",
+  "one-piece": "#ef4444",
+  default:     "#8b5cf6",
+};
 
 export const metadata: Metadata = {
   title: "Anime",
@@ -34,9 +41,19 @@ export default async function AnimePage() {
                 {s.coverImage ? (
                   <Image src={s.coverImage} alt={s.name} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-3xl font-black text-[var(--color-text-ghost)]">{s.name[0]}</span>
-                  </div>
+                  (() => {
+                    const color = SERIES_PALETTE[s.slug] ?? SERIES_PALETTE.default;
+                    return (
+                      <div
+                        className="absolute inset-0 flex items-center justify-center"
+                        style={{ background: `linear-gradient(135deg, ${color}33 0%, ${color}11 100%)` }}
+                      >
+                        <span className="text-5xl font-black" style={{ color, opacity: 0.85 }}>
+                          {s.name[0]}
+                        </span>
+                      </div>
+                    );
+                  })()
                 )}
               </div>
               <div className="p-3">

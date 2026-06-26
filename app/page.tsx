@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Swords, TrendingUp, Users, Shield } from "lucide-react";
+import { Swords, TrendingUp, Users, Zap } from "lucide-react";
 import { getPlatformStats, getTrendingMatchups, getRecentEntities } from "@/lib/queries";
 import { MatchupCard } from "@/components/matchup-card";
 import { CharacterCard } from "@/components/character-card";
@@ -8,62 +8,71 @@ export default async function HomePage() {
   const [stats, trending, recent] = await Promise.all([
     getPlatformStats(),
     getTrendingMatchups(6),
-    getRecentEntities(8),
+    getRecentEntities(12),
   ]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-16">
 
-      {/* Hero */}
-      <section className="text-center py-12 space-y-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--color-accent-border)] bg-[var(--color-accent-bg)] text-[var(--color-accent)] text-xs font-semibold tracking-wider uppercase">
-          <Swords size={12} />
+      {/* ── Hero ─────────────────────────────────────────────────────── */}
+      <section className="text-center py-10 space-y-6">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--color-accent-border)] bg-[var(--color-accent-bg)] text-[var(--color-accent)] text-xs font-bold tracking-widest uppercase">
+          <Zap size={11} />
           Power Scaling Community
         </div>
 
-        <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-tight">
+        <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-none">
           MAKE YOUR CASE.
           <br />
           <span className="text-[var(--color-accent)]">SETTLE THE DEBATE.</span>
         </h1>
 
-        <p className="text-[var(--color-text-muted)] text-lg max-w-xl mx-auto">
-          Predict anime battles, justify your pick with stats, and see how your
-          prediction stacks up against the entire community.
+        <p className="text-[var(--color-text-muted)] text-base max-w-lg mx-auto leading-relaxed">
+          Pick a side. Justify it with stats. See if the community agrees.
         </p>
 
         <div className="flex flex-wrap justify-center gap-3">
-          <Link href="/battles"
-            className="bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold px-6 py-3 rounded-xl transition-colors">
+          <Link
+            href="/battles"
+            className="inline-flex items-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold px-7 py-3 rounded-xl transition-colors text-sm"
+          >
+            <Swords size={15} />
             Browse Battles
           </Link>
-          <Link href="/register"
-            className="border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-base)] font-semibold px-6 py-3 rounded-xl transition-colors">
+          <Link
+            href="/register"
+            className="inline-flex items-center gap-2 border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-base)] font-semibold px-7 py-3 rounded-xl transition-colors text-sm"
+          >
             Join for Free
           </Link>
         </div>
 
-        {/* Stats */}
-        <div className="flex flex-wrap justify-center gap-8 pt-4">
+        {/* Stats row */}
+        <div className="flex flex-wrap justify-center gap-10 pt-2">
           {[
-            { icon: TrendingUp, value: stats.predictions, label: "Predictions Made" },
-            { icon: Swords,     value: stats.battles,     label: "Active Battles"   },
-            { icon: Users,      value: stats.characters,  label: "Characters"       },
+            { icon: TrendingUp, value: stats.predictions, label: "Predictions" },
+            { icon: Swords,     value: stats.battles,     label: "Active Battles" },
+            { icon: Users,      value: stats.characters,  label: "Characters" },
           ].map(({ icon: Icon, value, label }) => (
-            <div key={label} className="flex items-center gap-2">
-              <Icon size={16} className="text-[var(--color-accent)]" />
-              <span className="font-black text-xl">{value.toLocaleString()}</span>
-              <span className="text-[var(--color-text-muted)] text-sm">{label}</span>
+            <div key={label} className="flex flex-col items-center gap-1">
+              <div className="flex items-center gap-1.5">
+                <Icon size={14} className="text-[var(--color-accent)]" />
+                <span className="font-black text-2xl">{value.toLocaleString()}</span>
+              </div>
+              <span className="text-[var(--color-text-ghost)] text-xs uppercase tracking-widest font-semibold">
+                {label}
+              </span>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Trending Battles */}
-      <section className="space-y-4">
+      {/* ── Trending Battles ─────────────────────────────────────────── */}
+      <section className="space-y-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black tracking-tight">
-            🔥 Trending Battles
+          <h2 className="text-lg font-black tracking-tight flex items-center gap-2">
+            <span className="text-[var(--color-accent)]">⚔</span>
+            Trending Battles
           </h2>
           <Link href="/battles" className="text-sm text-[var(--color-accent)] hover:underline font-semibold">
             View all →
@@ -74,7 +83,7 @@ export default async function HomePage() {
           <EmptyState
             title="No battles yet"
             description="Be the first to spark a debate."
-            cta={{ label: "Create a Battle", href: "/battles" }}
+            cta={{ label: "Browse Battles", href: "/battles" }}
           />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -83,11 +92,12 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* Recently Added */}
-      <section className="space-y-4">
+      {/* ── Recently Added Characters ─────────────────────────────────── */}
+      <section className="space-y-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black tracking-tight">
-            ✨ Recently Added
+          <h2 className="text-lg font-black tracking-tight flex items-center gap-2">
+            <span>✦</span>
+            Recently Added
           </h2>
           <Link href="/characters" className="text-sm text-[var(--color-accent)] hover:underline font-semibold">
             All characters →
@@ -97,37 +107,62 @@ export default async function HomePage() {
         {recent.length === 0 ? (
           <EmptyState
             title="No characters yet"
-            description="Characters will appear here once approved."
+            description="Characters appear here once approved."
           />
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
             {recent.map((e) => <CharacterCard key={e.id} entity={e} />)}
           </div>
         )}
       </section>
 
-      {/* How it works */}
-      <section className="border border-[var(--color-border)] rounded-2xl p-8 space-y-6 bg-[var(--color-surface)]">
-        <h2 className="text-xl font-black tracking-tight text-center">How It Works</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* ── How it works ─────────────────────────────────────────────── */}
+      <section className="border border-[var(--color-border)] rounded-2xl p-8 space-y-8 bg-[var(--color-surface)]">
+        <h2 className="text-lg font-black tracking-tight text-center">How It Works</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            { icon: "⚔️", title: "Pick a Battle", desc: "Browse fan-favorite matchups or create your own. Solo fighters or full teams." },
-            { icon: "📊", title: "Justify Your Pick", desc: "Slide per-stat scores for each fighter. Speed, Strength, Hax, and more — make your case." },
-            { icon: "🏆", title: "See Where You Stand", desc: "Compare your prediction against thousands of others. Earn rank as you go." },
-          ].map(({ icon, title, desc }) => (
-            <div key={title} className="text-center space-y-2">
-              <div className="text-3xl">{icon}</div>
+            {
+              num: "01",
+              title: "Pick a Battle",
+              desc: "Browse fan-favorite matchups or create your own. Solo fighters or full teams.",
+            },
+            {
+              num: "02",
+              title: "Justify Your Pick",
+              desc: "Slide per-stat scores for each fighter — Speed, Strength, Hax, and more.",
+            },
+            {
+              num: "03",
+              title: "See Where You Stand",
+              desc: "Compare your prediction against the community and earn rank as you go.",
+            },
+          ].map(({ num, title, desc }) => (
+            <div key={num} className="flex flex-col items-center text-center gap-3">
+              <span className="text-4xl font-black text-[var(--color-accent)] opacity-30 leading-none">
+                {num}
+              </span>
               <p className="font-bold text-[var(--color-text-base)]">{title}</p>
-              <p className="text-sm text-[var(--color-text-muted)]">{desc}</p>
+              <p className="text-sm text-[var(--color-text-muted)] leading-relaxed">{desc}</p>
             </div>
           ))}
+        </div>
+        <div className="flex justify-center">
+          <Link
+            href="/battles"
+            className="inline-flex items-center gap-2 bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white font-bold px-6 py-2.5 rounded-xl transition-colors text-sm"
+          >
+            <Swords size={14} />
+            Start Predicting
+          </Link>
         </div>
       </section>
     </div>
   );
 }
 
-function EmptyState({ title, description, cta }: {
+function EmptyState({
+  title, description, cta,
+}: {
   title: string;
   description: string;
   cta?: { label: string; href: string };
@@ -137,8 +172,7 @@ function EmptyState({ title, description, cta }: {
       <p className="font-bold text-[var(--color-text-muted)]">{title}</p>
       <p className="text-sm text-[var(--color-text-ghost)]">{description}</p>
       {cta && (
-        <Link href={cta.href}
-          className="inline-block mt-2 text-sm font-semibold text-[var(--color-accent)] hover:underline">
+        <Link href={cta.href} className="inline-block mt-2 text-sm font-semibold text-[var(--color-accent)] hover:underline">
           {cta.label}
         </Link>
       )}

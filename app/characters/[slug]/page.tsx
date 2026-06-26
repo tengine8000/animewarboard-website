@@ -1,9 +1,21 @@
-import { getEntityBySlug } from "@/lib/queries";
+export const dynamic = "force-dynamic";
+
+import { getEntityBySlug, getEntityComments } from "@/lib/queries";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Shield, Swords } from "lucide-react";
+import { Swords } from "lucide-react";
+import { auth } from "@/auth";
+import { VariantSelector } from "@/components/variant-selector";
+import { CommentSection } from "@/components/comment-section";
 import type { Metadata } from "next";
+
+const SERIES_PALETTE: Record<string, string> = {
+  naruto:      "#f97316",
+  bleach:      "#6366f1",
+  "one-piece": "#ef4444",
+  default:     "#8b5cf6",
+};
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -12,21 +24,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const data = await getEntityBySlug(slug);
   return {
     title: data?.entity.name ?? "Character",
-    description: `${data?.entity.name} from ${data?.entity.series.name} — stats, battle record, and community predictions.`,
+    description: data?.entity.bio
+      ?? `${data?.entity.name} from ${data?.entity.series.name} — stats, battle record, and community predictions.`,
   };
 }
 
 export default async function CharacterPage({ params }: Props) {
   const { slug } = await params;
-  const data = await getEntityBySlug(slug);
+  const [data, session] = await Promise.all([getEntityBySlug(slug), auth()]);
   if (!data) notFound();
 
   const { entity, variants, battleRecord } = data;
   const defaultVariant = variants.find((v) => v.isDefault) ?? variants[0];
-  const imageUrl = defaultVariant?.imageUrl ?? entity.imageUrl;
+  const imageUrl   = defaultVariant?.imageUrl ?? entity.imageUrl;
+  const seriesColor = SERIES_PALETTE[entity.series.slug] ?? SERIES_PALETTE.default;
+  const isLoggedIn  = !!session?.user?.id;
+
+  const comments = await getEntityComments(entity.id);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
+
       {/* Breadcrumb */}
       <nav className="text-sm text-[var(--color-text-muted)]">
         <Link href="/anime" className="hover:text-[var(--color-accent)]">Anime</Link>
@@ -38,30 +56,40 @@ export default async function CharacterPage({ params }: Props) {
 
       {/* Profile header */}
       <div className="flex flex-col sm:flex-row gap-8 items-start">
-        {/* Avatar */}
         <div className="shrink-0">
-          <div className="w-40 h-40 rounded-2xl overflow-hidden bg-[var(--color-border)] ring-2 ring-[var(--color-border)]">
+          <div className="w-40 h-40 rounded-2xl overflow-hidden"
+            style={{ border: `2px solid ${seriesColor}44` }}>
             {imageUrl ? (
-              <Image src={imageUrl} alt={entity.name} width={160} height={160} className="object-cover object-top w-full h-full" />
+              <Image src={imageUrl} alt={entity.name} width={160} height={160}
+                className="object-cover object-top w-full h-full" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-5xl font-black text-[var(--color-text-ghost)]">
+              <div className="w-full h-full flex items-center justify-center text-6xl font-black"
+                style={{
+                  background: `linear-gradient(135deg, ${seriesColor}33 0%, ${seriesColor}11 100%)`,
+                  color: seriesColor,
+                }}>
                 {entity.name[0]}
               </div>
             )}
           </div>
         </div>
 
-        {/* Info */}
         <div className="space-y-3 flex-1">
           <div>
             <Link href={`/anime/${entity.series.slug}`}
-              className="text-xs font-semibold text-[var(--color-accent)] uppercase tracking-widest hover:underline">
+              className="text-xs font-semibold uppercase tracking-widest hover:underline"
+              style={{ color: "var(--color-accent)" }}>
               {entity.series.name}
             </Link>
             <h1 className="text-4xl font-black tracking-tight mt-1">{entity.name}</h1>
           </div>
 
-          {/* Battle record */}
+          {entity.bio && (
+            <p className="text-sm leading-relaxed max-w-prose" style={{ color: "var(--color-text-muted)" }}>
+              {entity.bio}
+            </p>
+          )}
+
           <div className="flex gap-4">
             {[
               { label: "W", value: battleRecord.wins,   color: "text-emerald-500" },
@@ -76,7 +104,8 @@ export default async function CharacterPage({ params }: Props) {
           </div>
 
           <Link href={`/battles?character=${entity.slug}`}
-            className="inline-flex items-center gap-2 text-sm font-semibold bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-4 py-2 rounded-xl transition-colors">
+            className="inline-flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-xl transition-colors"
+            style={{ background: "var(--color-accent)" }}>
             <Swords size={14} />
             View Battles
           </Link>
@@ -84,44 +113,57 @@ export default async function CharacterPage({ params }: Props) {
       </div>
 
       {/* Variants */}
-      {variants.length > 1 && (
-        <section className="space-y-3">
-          <h2 className="text-lg font-black">Forms & Variants</h2>
-          <div className="flex flex-wrap gap-2">
-            {variants.map((v) => (
-              <div key={v.id}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-medium transition-colors
-                  ${v.isDefault
-                    ? "border-[var(--color-accent)] text-[var(--color-accent)] bg-[var(--color-accent-bg)]"
-                    : "border-[var(--color-border)] text-[var(--color-text-muted)]"
-                  }`}>
-                {v.imageUrl && (
-                  <Image src={v.imageUrl} alt={v.name} width={20} height={20} className="rounded-full object-cover" />
-                )}
-                {v.name}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+      <VariantSelector
+        variants={variants}
+        entityName={entity.name}
+        entityImage={entity.imageUrl ?? null}
+        seriesColor={seriesColor}
+      />
 
-      {/* Stats — placeholder until Phase 4 (radar chart) */}
+      {/* Stats — placeholder until Phase 4 */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-black">Power Stats</h2>
-          <span className="text-xs text-[var(--color-text-ghost)] border border-dashed border-[var(--color-border)] px-2 py-0.5 rounded-full">
-            Radar chart coming in next update
+          <span className="text-xs border border-dashed px-2 py-0.5 rounded-full"
+            style={{ color: "var(--color-text-ghost)", borderColor: "var(--color-border)" }}>
+            Radar chart · Phase 4
           </span>
         </div>
-        <div className="border border-dashed border-[var(--color-border)] rounded-2xl py-12 text-center text-[var(--color-text-muted)] text-sm">
+        <div className="border border-dashed rounded-2xl py-12 text-center text-sm"
+          style={{ borderColor: "var(--color-border)", color: "var(--color-text-muted)" }}>
           Community stat ratings will appear here.
         </div>
       </section>
 
-      {/* Image attribution */}
+      {/* Community Discussion */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-black">Community Discussion</h2>
+          {comments.length > 0 && (
+            <span className="text-xs" style={{ color: "var(--color-text-ghost)" }}>
+              {comments.length} comment{comments.length !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+        <div style={{ border: "1px solid var(--color-border)", borderRadius: 0 }}>
+          <CommentSection
+            type="entity"
+            targetId={entity.id}
+            targetSlug={entity.slug}
+            isLoggedIn={isLoggedIn}
+            userInitial={session?.user?.name?.[0]?.toUpperCase() ?? "?"}
+            comments={comments}
+          />
+        </div>
+      </section>
+
       {entity.imageSourceUrl && (
-        <p className="text-xs text-[var(--color-text-ghost)]">
-          Image source: <a href={entity.imageSourceUrl} target="_blank" rel="noopener noreferrer" className="hover:text-[var(--color-accent)] underline">{entity.imageSourceUrl}</a>
+        <p className="text-xs" style={{ color: "var(--color-text-ghost)" }}>
+          Image:{" "}
+          <a href={entity.imageSourceUrl} target="_blank" rel="noopener noreferrer"
+            className="hover:underline" style={{ color: "var(--color-accent)" }}>
+            {entity.imageSourceUrl}
+          </a>
         </p>
       )}
     </div>

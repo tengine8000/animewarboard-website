@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ThemeProvider } from "next-themes";
 import { Suspense } from "react";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Nav } from "@/components/nav";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import "./globals.css";
@@ -20,9 +20,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`} suppressHydrationWarning>
+      <head>
+        {/* Inline script in <head> runs before paint — not inside React body tree, no React 19 warning */}
+        <script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem('awb-theme')==='light')document.documentElement.classList.remove('dark')}catch(e){}` }} />
+      </head>
       <body className="min-h-full flex flex-col bg-[var(--color-bg)] text-[var(--color-text-base)]">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} storageKey="awb-theme">
+        <ThemeProvider>
           <Nav />
           <main className="flex-1">
             {children}

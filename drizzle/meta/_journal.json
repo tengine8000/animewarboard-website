@@ -8,6 +8,13 @@
       "when": 1782392903260,
       "tag": "0000_square_the_hood",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782400512339,
+      "tag": "0001_legal_rocket_raccoon",
+      "breakpoints": true
     }
   ]
 }
