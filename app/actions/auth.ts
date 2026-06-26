@@ -1,7 +1,11 @@
 "use server";
 
 import { AuthError } from "next-auth";
-import { signIn } from "@/auth";
+import { signIn, signOut } from "@/auth";
+
+export async function signOutAction(): Promise<void> {
+  await signOut({ redirectTo: "/" });
+}
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";

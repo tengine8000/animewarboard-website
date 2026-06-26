@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Swords } from "lucide-react";
+import { Swords, LogOut } from "lucide-react";
 import { auth } from "@/auth";
 import { ThemeToggle } from "./theme-toggle";
 import { SearchBar } from "./search-bar";
 import { MobileMenuButton } from "./mobile-menu";
 import { NotificationBell } from "./notification-bell";
 import { getUnreadNotificationCount } from "@/lib/queries";
+import { signOutAction } from "@/app/actions/auth";
 
 export async function Nav() {
   const session = await auth();
@@ -59,18 +60,29 @@ export async function Nav() {
 
           {/* Desktop auth — hidden on mobile (accessible via hamburger drawer) */}
           {user ? (
-            <Link href="/profile"
-              className="hidden md:flex items-center gap-2 text-sm text-[var(--color-text-base)] px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors">
-              {user.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.image} alt={user.name ?? ""} className="w-5 h-5 rounded-full object-cover" />
-              ) : (
-                <span className="w-5 h-5 rounded-full bg-[var(--color-accent)] flex items-center justify-center text-white text-[10px] font-bold">
-                  {(user.name ?? user.email ?? "?")[0].toUpperCase()}
-                </span>
-              )}
-              <span>{user.name ?? "Profile"}</span>
-            </Link>
+            <div className="hidden md:flex items-center gap-1">
+              <Link href="/profile"
+                className="flex items-center gap-2 text-sm text-[var(--color-text-base)] px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors">
+                {user.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.image} alt={user.name ?? ""} className="w-5 h-5 rounded-full object-cover" />
+                ) : (
+                  <span className="w-5 h-5 rounded-full bg-[var(--color-accent)] flex items-center justify-center text-white text-[10px] font-bold">
+                    {(user.name ?? user.email ?? "?")[0].toUpperCase()}
+                  </span>
+                )}
+                <span>{user.name ?? "Profile"}</span>
+              </Link>
+              <form action={signOutAction}>
+                <button
+                  type="submit"
+                  title="Sign out"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-base)] hover:border-[var(--color-accent)] transition-colors"
+                >
+                  <LogOut size={13} />
+                </button>
+              </form>
+            </div>
           ) : (
             <div className="hidden md:flex items-center gap-2">
               <Link href="/login"

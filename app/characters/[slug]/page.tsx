@@ -176,6 +176,7 @@ export default async function CharacterPage({ params }: Props) {
             targetId={entity.id}
             targetSlug={entity.slug}
             isLoggedIn={isLoggedIn}
+            isMod={["admin","moderator"].includes((session?.user as any)?.role)}
             userInitial={session?.user?.name?.[0]?.toUpperCase() ?? "?"}
             comments={comments}
           />

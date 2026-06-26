@@ -310,6 +310,7 @@ export default async function BattlePage({ params }: Props) {
           targetId={matchup.id}
           targetSlug={matchup.slug}
           isLoggedIn={isLoggedIn}
+          isMod={["admin","moderator"].includes((session?.user as any)?.role)}
           userInitial={session?.user?.name?.[0]?.toUpperCase() ?? "?"}
           comments={comments}
         />

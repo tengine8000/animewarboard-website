@@ -4,7 +4,9 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Swords, Zap } from "lucide-react";
+import { Menu, X, Swords, Zap, LogOut } from "lucide-react";
+import { signOutAction } from "@/app/actions/auth";
+import { SearchBar } from "./search-bar";
 
 const NAV_LINKS = [
   { href: "/battles",      label: "Battles",      icon: "⚔" },
@@ -46,8 +48,8 @@ export function MobileMenuButton({ user }: { user: User | null }) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open navigation menu"
-        className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg transition-colors"
-        style={{ color: "var(--color-text-muted)", border: "1px solid var(--color-border)" }}
+        className="md:hidden flex items-center justify-center rounded-lg transition-colors"
+        style={{ color: "var(--color-text-muted)", border: "1px solid var(--color-border)", width: 44, height: 44, minWidth: 44 }}
       >
         <Menu size={18} />
       </button>
@@ -136,6 +138,11 @@ export function MobileMenuButton({ user }: { user: User | null }) {
           </button>
         </div>
 
+        {/* Search */}
+        <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--color-border)" }}>
+          <SearchBar />
+        </div>
+
         {/* Nav links */}
         <nav style={{ flex: 1, padding: "8px", overflowY: "auto" }}>
           <p style={{
@@ -180,39 +187,64 @@ export function MobileMenuButton({ user }: { user: User | null }) {
         {/* Auth section */}
         <div style={{ padding: "12px 16px", borderTop: "1px solid var(--color-border)", flexShrink: 0 }}>
           {user ? (
-            <Link
-              href="/profile"
-              onClick={() => setOpen(false)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                padding: "10px 14px",
-                borderRadius: "10px",
-                border: "1px solid var(--color-border)",
-                fontSize: "14px",
-                fontWeight: 700,
-                color: "var(--color-text-base)",
-              }}
-            >
-              {user.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.image} alt={user.name ?? ""} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
-              ) : (
-                <span style={{
-                  width: 28, height: 28, borderRadius: "50%",
-                  background: "var(--color-accent)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#fff", fontSize: "11px", fontWeight: 900, flexShrink: 0,
-                }}>
-                  {initial}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <Link
+                href="/profile"
+                onClick={() => setOpen(false)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  border: "1px solid var(--color-border)",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  color: "var(--color-text-base)",
+                }}
+              >
+                {user.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.image} alt={user.name ?? ""} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }} />
+                ) : (
+                  <span style={{
+                    width: 28, height: 28, borderRadius: "50%",
+                    background: "var(--color-accent)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#fff", fontSize: "11px", fontWeight: 900, flexShrink: 0,
+                  }}>
+                    {initial}
+                  </span>
+                )}
+                <span>{user.name ?? "Profile"}</span>
+                <span style={{ marginLeft: "auto", fontSize: "11px", color: "var(--color-text-ghost)" }}>
+                  <Zap size={11} />
                 </span>
-              )}
-              <span>{user.name ?? "Profile"}</span>
-              <span style={{ marginLeft: "auto", fontSize: "11px", color: "var(--color-text-ghost)" }}>
-                <Zap size={11} />
-              </span>
-            </Link>
+              </Link>
+              <form action={signOutAction}>
+                <button
+                  type="submit"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    width: "100%",
+                    padding: "10px 14px",
+                    borderRadius: "10px",
+                    border: "1px solid var(--color-border)",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    color: "var(--color-text-muted)",
+                    background: "transparent",
+                    cursor: "pointer",
+                  }}
+                >
+                  <LogOut size={13} />
+                  Sign Out
+                </button>
+              </form>
+            </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <Link

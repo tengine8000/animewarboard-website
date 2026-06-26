@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ThumbsUp, ThumbsDown, CornerDownRight } from "lucide-react";
+import { ThumbsUp, ThumbsDown, CornerDownRight, Trash2 } from "lucide-react";
 import { postCommentAction, toggleCommentVoteAction } from "@/app/actions/comment";
+import { deleteCommentAction } from "@/app/actions/admin-moderation";
 import type { CommentRow } from "@/lib/queries";
 import Link from "next/link";
 import { RankBadge, ModBadge } from "@/components/rank-badge";
@@ -13,6 +14,7 @@ type Props = {
   targetId:    string;
   targetSlug:  string;
   isLoggedIn:  boolean;
+  isMod:       boolean;
   userInitial: string;
   comments:    CommentRow[];
 };
@@ -109,17 +111,19 @@ function CommentInput({
 }
 
 function CommentCard({
-  comment, type, targetId, targetSlug, isLoggedIn, userInitial, isReply,
+  comment, type, targetId, targetSlug, isLoggedIn, isMod, userInitial, isReply,
 }: {
   comment:     CommentRow;
   type:        "matchup" | "entity";
   targetId:    string;
   targetSlug:  string;
   isLoggedIn:  boolean;
+  isMod:       boolean;
   userInitial: string;
   isReply:     boolean;
 }) {
   const [showReply, setShowReply] = useState(false);
+  const [deleted,   setDeleted]   = useState(false);
   const [score,     setScore]     = useState(comment.score);
   const [isPending, start]        = useTransition();
   const router = useRouter();
@@ -133,8 +137,19 @@ function CommentCard({
     });
   }
 
+  function remove() {
+    if (!confirm("Delete this comment?")) return;
+    setDeleted(true);
+    start(async () => {
+      await deleteCommentAction(comment.id, type, targetSlug);
+      router.refresh();
+    });
+  }
+
   const initial = comment.user.name?.[0]?.toUpperCase() ?? "?";
   const registerPath = type === "matchup" ? `/register?returnTo=/battles/${targetSlug}` : `/register?returnTo=/characters/${targetSlug}`;
+
+  if (deleted) return null;
 
   return (
     <div className={isReply ? "ml-10" : ""}>
@@ -174,6 +189,16 @@ function CommentCard({
                 {showReply ? "Cancel" : "Reply"}
               </button>
             )}
+            {isMod && (
+              <button onClick={remove} disabled={isPending}
+                className="flex items-center gap-1 text-[11px] ml-auto transition-colors disabled:opacity-40"
+                style={{ color: "#ef444480" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#ef444480")}
+              >
+                <Trash2 size={11} />
+              </button>
+            )}
           </div>
           {showReply && (
             <div className="mt-3">
@@ -190,7 +215,7 @@ function CommentCard({
   );
 }
 
-export function CommentSection({ type, targetId, targetSlug, isLoggedIn, userInitial, comments }: Props) {
+export function CommentSection({ type, targetId, targetSlug, isLoggedIn, isMod, userInitial, comments }: Props) {
   const topLevel = comments.filter((c) => !c.parentId);
   const replyMap = new Map<string, CommentRow[]>();
   for (const r of comments.filter((c) => c.parentId)) {
@@ -233,12 +258,12 @@ export function CommentSection({ type, targetId, targetSlug, isLoggedIn, userIni
             <div key={c.id} className="px-4 py-4 space-y-4">
               <CommentCard
                 comment={c} type={type} targetId={targetId} targetSlug={targetSlug}
-                isLoggedIn={isLoggedIn} userInitial={userInitial} isReply={false}
+                isLoggedIn={isLoggedIn} isMod={isMod} userInitial={userInitial} isReply={false}
               />
               {(replyMap.get(c.id) ?? []).map((r) => (
                 <CommentCard
                   key={r.id} comment={r} type={type} targetId={targetId} targetSlug={targetSlug}
-                  isLoggedIn={isLoggedIn} userInitial={userInitial} isReply={true}
+                  isLoggedIn={isLoggedIn} isMod={isMod} userInitial={userInitial} isReply={true}
                 />
               ))}
             </div>
