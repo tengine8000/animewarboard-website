@@ -443,7 +443,7 @@ export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA,
           <div style={{
             flex: 1,
             filter: verdict && difficulty
-              ? "drop-shadow(0 0 6px rgba(249,115,22,0.8)) drop-shadow(0 0 18px rgba(249,115,22,0.4))"
+              ? "drop-shadow(0 0 2px rgba(249,115,22,0.6)) drop-shadow(0 0 4px rgba(249,115,22,0.4))"
               : "none",
           }}>
             <button

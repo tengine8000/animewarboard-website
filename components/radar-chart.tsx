@@ -120,7 +120,7 @@ export function RadarChart({
     return (
       <text key={i} x={x} y={y} textAnchor={anchor} dominantBaseline="middle"
         fontSize={size * 0.038} fontWeight="700" letterSpacing="0.05em"
-        fill="var(--color-text-muted)"
+        fill="var(--color-text-base)"
         filter={`url(#${glowId})`}>
         {label}
       </text>
