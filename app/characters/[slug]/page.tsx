@@ -12,8 +12,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Swords } from "lucide-react";
 import { auth } from "@/auth";
-import { VariantSelector } from "@/components/variant-selector";
-import { EntityStatsPanel } from "@/components/entity-stats-panel";
+import { CharacterVariantsSection } from "@/components/character-variants-section";
 import { CommentSection } from "@/components/comment-section";
 import { getUserPointSummary } from "@/lib/points";
 import type { Metadata } from "next";
@@ -53,15 +52,19 @@ export default async function CharacterPage({ params }: Props) {
   const isLoggedIn  = !!session?.user?.id;
 
   const userId = session?.user?.id ?? null;
-  const defaultVariantId = defaultVariant?.id ?? null;
 
-  const [entityStatsData, communityStatsData, userStatsData, comments, pointSummary] = await Promise.all([
-    defaultVariantId ? getEntityStats(defaultVariantId) : Promise.resolve([]),
-    defaultVariantId ? getCommunityEntityStatsAvg(defaultVariantId) : Promise.resolve([]),
-    defaultVariantId && userId ? getUserEntityStats(userId, defaultVariantId) : Promise.resolve({}),
+  // Fetch stats for every variant in parallel so client-side switching is instant
+  const [allEntityStatsArr, allCommunityStatsArr, allUserStatsArr, comments, pointSummary] = await Promise.all([
+    Promise.all(variants.map((v) => getEntityStats(v.id))),
+    Promise.all(variants.map((v) => getCommunityEntityStatsAvg(v.id))),
+    Promise.all(variants.map((v) => userId ? getUserEntityStats(userId, v.id) : Promise.resolve({}))),
     getEntityComments(entity.id),
     userId ? getUserPointSummary(userId) : Promise.resolve(null),
   ]);
+
+  const allEntityStats    = Object.fromEntries(variants.map((v, i) => [v.id, allEntityStatsArr[i]]));
+  const allCommunityStats = Object.fromEntries(variants.map((v, i) => [v.id, allCommunityStatsArr[i]]));
+  const allUserStats      = Object.fromEntries(variants.map((v, i) => [v.id, allUserStatsArr[i]]));
 
   const userRank   = pointSummary?.rank ?? null;
   const xpNeeded   = pointSummary?.xpToNext ?? null;
@@ -156,33 +159,20 @@ export default async function CharacterPage({ params }: Props) {
         </div>
       </div>
 
-      {/* Variants */}
-      <VariantSelector
+      {/* Variants + Power Stats (unified — variant switching updates stats instantly) */}
+      <CharacterVariantsSection
         variants={variants}
         entityName={entity.name}
         entityImage={entity.imageUrl ?? null}
+        entitySlug={entity.slug}
         seriesColor={seriesColor}
+        isLoggedIn={isLoggedIn}
+        userRank={userRank}
+        xpNeeded={xpNeeded}
+        allEntityStats={allEntityStats}
+        allCommunityStats={allCommunityStats}
+        allUserStats={allUserStats}
       />
-
-      {/* Power Stats */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-black">Power Stats</h2>
-        {defaultVariantId ? (
-          <EntityStatsPanel
-            variantId={defaultVariantId}
-            entitySlug={entity.slug}
-            entityStats={entityStatsData}
-            communityStats={communityStatsData}
-            userStats={userStatsData}
-            isLoggedIn={isLoggedIn}
-            userRank={userRank}
-            xpNeeded={xpNeeded}
-            seriesColor={seriesColor}
-          />
-        ) : (
-          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>No variant data available.</p>
-        )}
-      </section>
 
       {/* Community Discussion */}
       <section className="space-y-3">
