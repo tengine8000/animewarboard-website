@@ -33,6 +33,10 @@ export async function Nav() {
             className="px-3 py-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-base)] hover:bg-[var(--color-surface-hover)] transition-colors">
             Battles
           </Link>
+          <Link href="/ranks"
+            className="px-3 py-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text-base)] hover:bg-[var(--color-surface-hover)] transition-colors">
+            Ranks
+          </Link>
         </nav>
 
         {/* Search */}

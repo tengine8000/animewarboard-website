@@ -15,6 +15,13 @@
       "when": 1782400512339,
       "tag": "0001_legal_rocket_raccoon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782477774140,
+      "tag": "0002_bitter_gravity",
+      "breakpoints": true
     }
   ]
 }

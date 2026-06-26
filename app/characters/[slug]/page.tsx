@@ -15,6 +15,7 @@ import { auth } from "@/auth";
 import { VariantSelector } from "@/components/variant-selector";
 import { EntityStatsPanel } from "@/components/entity-stats-panel";
 import { CommentSection } from "@/components/comment-section";
+import { getUserPointSummary } from "@/lib/points";
 import type { Metadata } from "next";
 
 const SERIES_PALETTE: Record<string, string> = {
@@ -50,12 +51,16 @@ export default async function CharacterPage({ params }: Props) {
   const userId = session?.user?.id ?? null;
   const defaultVariantId = defaultVariant?.id ?? null;
 
-  const [entityStatsData, communityStatsData, userStatsData, comments] = await Promise.all([
+  const [entityStatsData, communityStatsData, userStatsData, comments, pointSummary] = await Promise.all([
     defaultVariantId ? getEntityStats(defaultVariantId) : Promise.resolve([]),
     defaultVariantId ? getCommunityEntityStatsAvg(defaultVariantId) : Promise.resolve([]),
     defaultVariantId && userId ? getUserEntityStats(userId, defaultVariantId) : Promise.resolve({}),
     getEntityComments(entity.id),
+    userId ? getUserPointSummary(userId) : Promise.resolve(null),
   ]);
+
+  const userRank   = pointSummary?.rank ?? null;
+  const xpNeeded   = pointSummary?.xpToNext ?? null;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
@@ -146,6 +151,8 @@ export default async function CharacterPage({ params }: Props) {
             communityStats={communityStatsData}
             userStats={userStatsData}
             isLoggedIn={isLoggedIn}
+            userRank={userRank}
+            xpNeeded={xpNeeded}
             seriesColor={seriesColor}
           />
         ) : (

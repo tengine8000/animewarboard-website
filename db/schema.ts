@@ -56,6 +56,7 @@ export const transactionTypeEnum = pgEnum("transaction_type", [
   "comment_downvoted",
   "vote_upvoted",
   "entity_approved",
+  "entity_stat_rated",
   "account_milestone",
   "flag_content",
   "flag_rewarded",

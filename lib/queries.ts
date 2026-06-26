@@ -3,8 +3,11 @@ import {
   matchups, matchupParticipants, entityVariants, entities, categories,
   votes, anonymousVotes, attributes, entityStats, communityEntityStats,
   voteAttributes, matchupComments, entityComments, commentVotes, users,
+  pointTransactions,
 } from "@/db/schema";
 import { eq, desc, asc, sql, count, and, isNull, ilike, inArray } from "drizzle-orm";
+import { getRankFromXp } from "@/lib/ranks";
+import { getAdminSettings } from "@/lib/points";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -613,7 +616,7 @@ export type CommentRow = {
   body:      string;
   createdAt: Date;
   parentId:  string | null;
-  user:      { id: string; name: string | null; image: string | null };
+  user:      { id: string; name: string | null; image: string | null; role: string; lifetimeXp: number; rank: import("@/lib/ranks").RankName };
   score:     number;
 };
 
@@ -634,51 +637,67 @@ async function fetchCommentVoteScores(commentIds: string[], type: "matchup" | "e
 }
 
 export async function getMatchupComments(matchupId: string): Promise<CommentRow[]> {
-  const rows = await db
-    .select({
-      id:        matchupComments.id,
-      body:      matchupComments.body,
-      createdAt: matchupComments.createdAt,
-      parentId:  matchupComments.parentId,
-      userId:    matchupComments.userId,
-      userName:  users.name,
-      userImage: users.image,
-    })
-    .from(matchupComments)
-    .innerJoin(users, eq(matchupComments.userId, users.id))
-    .where(eq(matchupComments.matchupId, matchupId))
-    .orderBy(desc(matchupComments.createdAt));
+  const [rows, settings] = await Promise.all([
+    db
+      .select({
+        id:         matchupComments.id,
+        body:       matchupComments.body,
+        createdAt:  matchupComments.createdAt,
+        parentId:   matchupComments.parentId,
+        userId:     matchupComments.userId,
+        userName:   users.name,
+        userImage:  users.image,
+        userRole:   users.role,
+        lifetimeXp: sql<string>`COALESCE((SELECT SUM(pt.amount) FROM point_transactions pt WHERE pt.user_id = ${users.id} AND pt.amount > 0), 0)`,
+      })
+      .from(matchupComments)
+      .innerJoin(users, eq(matchupComments.userId, users.id))
+      .where(eq(matchupComments.matchupId, matchupId))
+      .orderBy(desc(matchupComments.createdAt)),
+    getAdminSettings(),
+  ]);
 
   if (rows.length === 0) return [];
   const scoreMap = await fetchCommentVoteScores(rows.map((r) => r.id), "matchup");
-  return rows.map((r) => ({
-    id: r.id, body: r.body, createdAt: r.createdAt, parentId: r.parentId,
-    user: { id: r.userId, name: r.userName, image: r.userImage },
-    score: scoreMap[r.id] ?? 0,
-  }));
+  return rows.map((r) => {
+    const xp = parseInt(r.lifetimeXp, 10);
+    return {
+      id: r.id, body: r.body, createdAt: r.createdAt, parentId: r.parentId,
+      user: { id: r.userId, name: r.userName, image: r.userImage, role: r.userRole, lifetimeXp: xp, rank: getRankFromXp(xp, settings).rank },
+      score: scoreMap[r.id] ?? 0,
+    };
+  });
 }
 
 export async function getEntityComments(entityId: string): Promise<CommentRow[]> {
-  const rows = await db
-    .select({
-      id:        entityComments.id,
-      body:      entityComments.body,
-      createdAt: entityComments.createdAt,
-      parentId:  entityComments.parentId,
-      userId:    entityComments.userId,
-      userName:  users.name,
-      userImage: users.image,
-    })
-    .from(entityComments)
-    .innerJoin(users, eq(entityComments.userId, users.id))
-    .where(eq(entityComments.entityId, entityId))
-    .orderBy(desc(entityComments.createdAt));
+  const [rows, settings] = await Promise.all([
+    db
+      .select({
+        id:         entityComments.id,
+        body:       entityComments.body,
+        createdAt:  entityComments.createdAt,
+        parentId:   entityComments.parentId,
+        userId:     entityComments.userId,
+        userName:   users.name,
+        userImage:  users.image,
+        userRole:   users.role,
+        lifetimeXp: sql<string>`COALESCE((SELECT SUM(pt.amount) FROM point_transactions pt WHERE pt.user_id = ${users.id} AND pt.amount > 0), 0)`,
+      })
+      .from(entityComments)
+      .innerJoin(users, eq(entityComments.userId, users.id))
+      .where(eq(entityComments.entityId, entityId))
+      .orderBy(desc(entityComments.createdAt)),
+    getAdminSettings(),
+  ]);
 
   if (rows.length === 0) return [];
   const scoreMap = await fetchCommentVoteScores(rows.map((r) => r.id), "entity");
-  return rows.map((r) => ({
-    id: r.id, body: r.body, createdAt: r.createdAt, parentId: r.parentId,
-    user: { id: r.userId, name: r.userName, image: r.userImage },
-    score: scoreMap[r.id] ?? 0,
-  }));
+  return rows.map((r) => {
+    const xp = parseInt(r.lifetimeXp, 10);
+    return {
+      id: r.id, body: r.body, createdAt: r.createdAt, parentId: r.parentId,
+      user: { id: r.userId, name: r.userName, image: r.userImage, role: r.userRole, lifetimeXp: xp, rank: getRankFromXp(xp, settings).rank },
+      score: scoreMap[r.id] ?? 0,
+    };
+  });
 }

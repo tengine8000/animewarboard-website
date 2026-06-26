@@ -4,22 +4,15 @@ import { db } from "@/db";
 import { votes, users } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import Link from "next/link";
-import { Swords, Calendar, Shield, LogOut } from "lucide-react";
+import Image from "next/image";
+import { Swords, Calendar, Shield, LogOut, Zap, Flame, Coins, Star } from "lucide-react";
 import type { Metadata } from "next";
+import { getUserPointSummary } from "@/lib/points";
+import { RANK_COLORS, RANK_ICONS } from "@/lib/ranks";
+import { RankBadge } from "@/components/rank-badge";
 
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "My Profile" };
-
-const RANKS = [
-  { label: "Private",      minXp: 0     },
-  { label: "Corporal",     minXp: 100   },
-  { label: "Sergeant",     minXp: 500   },
-  { label: "Colonel",      minXp: 2000  },
-  { label: "Field Marshal",minXp: 10000 },
-];
-
-function getRank(xp: number) {
-  return [...RANKS].reverse().find((r) => xp >= r.minXp) ?? RANKS[0];
-}
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -27,57 +20,62 @@ export default async function ProfilePage() {
 
   const userId = session.user.id;
 
-  const [dbUser] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  const [{ c: voteCount }] = await db.select({ c: count() }).from(votes).where(eq(votes.userId, userId));
+  const [[dbUser], [{ c: voteCount }], pointSummary] = await Promise.all([
+    db.select().from(users).where(eq(users.id, userId)).limit(1),
+    db.select({ c: count() }).from(votes).where(eq(votes.userId, userId)),
+    getUserPointSummary(userId),
+  ]);
 
-  const totalXp = Number(voteCount) * 10; // placeholder: 10 XP per prediction
-  const rank = getRank(totalXp);
-  const nextRank = RANKS[RANKS.indexOf(rank) + 1];
-  const progressPercent = nextRank
-    ? Math.min(100, Math.round(((totalXp - rank.minXp) / (nextRank.minXp - rank.minXp)) * 100))
-    : 100;
+  const { balance, lifetimeXp, rank, nextRank, xpToNext, progressPercent } = pointSummary;
 
   const joinedAt = dbUser?.createdAt
     ? new Date(dbUser.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
     : null;
 
   const initial = ((session.user.name ?? session.user.email ?? "?")[0]).toUpperCase();
+  const rankColor = RANK_COLORS[rank];
+  const rankIcon  = RANK_ICONS[rank];
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-2xl mx-auto px-4 py-8 space-y-4">
 
       {/* Profile header */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6">
+      <div className="p-6 space-y-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
         <div className="flex items-start gap-5">
-          {/* Avatar */}
           <div className="shrink-0">
             {session.user.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={session.user.image}
-                alt={session.user.name ?? ""}
-                className="w-16 h-16 rounded-2xl object-cover"
+              <Image
+                src={session.user.image} alt={session.user.name ?? ""}
+                width={64} height={64} className="w-16 h-16 rounded-xl object-cover"
               />
             ) : (
-              <div className="w-16 h-16 rounded-2xl bg-[var(--color-accent)] flex items-center justify-center text-white text-2xl font-black">
+              <div className="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-black"
+                style={{ background: rankColor }}>
                 {initial}
               </div>
             )}
           </div>
 
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-black tracking-tight truncate">
-              {session.user.name ?? "Anonymous"}
-            </h1>
-            <p className="text-sm text-[var(--color-text-muted)] truncate">{session.user.email}</p>
+          <div className="flex-1 min-w-0 space-y-2">
+            <div>
+              <h1 className="text-2xl font-black tracking-tight truncate">
+                {session.user.name ?? "Anonymous"}
+              </h1>
+              <p className="text-sm truncate" style={{ color: "var(--color-text-muted)" }}>
+                {session.user.email}
+              </p>
+            </div>
 
-            <div className="flex items-center gap-3 mt-2">
-              {/* Rank badge */}
-              <span className="text-[10px] font-bold tracking-widest uppercase border border-[var(--color-accent)] text-[var(--color-accent)] px-2.5 py-0.5 rounded-full">
-                {rank.label}
-              </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <RankBadge rank={rank} size="sm" />
+              {dbUser?.isPatron && (
+                <span className="text-[10px] font-black tracking-widest uppercase rounded-full border px-2 py-0.5"
+                  style={{ color: "#f59e0b", borderColor: "#f59e0b66", background: "#f59e0b14" }}>
+                  ★ Patron
+                </span>
+              )}
               {joinedAt && (
-                <span className="flex items-center gap-1 text-xs text-[var(--color-text-ghost)]">
+                <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-text-ghost)" }}>
                   <Calendar size={10} />
                   Joined {joinedAt}
                 </span>
@@ -87,60 +85,75 @@ export default async function ProfilePage() {
         </div>
       </div>
 
-      {/* XP progress */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 space-y-4">
+      {/* Rank progress */}
+      <div className="p-6 space-y-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-black tracking-widest uppercase text-[var(--color-text-muted)]">
+          <p className="text-[10px] font-black tracking-widest uppercase" style={{ color: "var(--color-text-ghost)" }}>
             Rank Progress
-          </h2>
-          <span className="text-xs text-[var(--color-text-ghost)]">{totalXp.toLocaleString()} XP</span>
+          </p>
+          <div className="flex items-center gap-1 text-xs font-black" style={{ color: rankColor }}>
+            <Zap size={11} />
+            {lifetimeXp.toLocaleString()} XP
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs font-semibold">
-            <span className="text-[var(--color-accent)]">{rank.label}</span>
-            {nextRank ? (
-              <span className="text-[var(--color-text-ghost)]">{nextRank.label}</span>
-            ) : (
-              <span className="text-[var(--color-gold)]">Max Rank</span>
+        {/* Big rank icon */}
+        <div className="flex items-center gap-4">
+          <div className="text-5xl select-none" style={{ filter: `drop-shadow(0 0 8px ${rankColor}99)` }}>
+            {rankIcon}
+          </div>
+          <div className="flex-1 space-y-2">
+            <div className="flex justify-between text-xs font-black">
+              <span style={{ color: rankColor }}>{rank}</span>
+              {nextRank
+                ? <span style={{ color: "var(--color-text-ghost)" }}>{nextRank}</span>
+                : <span style={{ color: "#f59e0b" }}>Max Rank</span>}
+            </div>
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--color-border)" }}>
+              <div className="h-full rounded-full transition-all" style={{ width: `${progressPercent}%`, background: rankColor }} />
+            </div>
+            {xpToNext !== null && (
+              <p className="text-[10px]" style={{ color: "var(--color-text-ghost)" }}>
+                {xpToNext.toLocaleString()} XP to {nextRank}
+              </p>
             )}
           </div>
-          <div className="h-2 bg-[var(--color-border)] rounded-full overflow-hidden">
-            <div
-              className="h-full bg-[var(--color-accent)] rounded-full transition-all"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          {nextRank && (
-            <p className="text-[10px] text-[var(--color-text-ghost)]">
-              {(nextRank.minXp - totalXp).toLocaleString()} XP to {nextRank.label}
-            </p>
-          )}
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 text-center">
-          <p className="text-3xl font-black text-[var(--color-accent)]">{Number(voteCount).toLocaleString()}</p>
-          <p className="text-xs font-semibold text-[var(--color-text-muted)] mt-1 uppercase tracking-widest">Predictions</p>
-        </div>
-        <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-5 text-center">
-          <p className="text-3xl font-black text-[var(--color-gold)]">{dbUser?.loginStreak ?? 0}</p>
-          <p className="text-xs font-semibold text-[var(--color-text-muted)] mt-1 uppercase tracking-widest">Day Streak</p>
-        </div>
+      {/* Stats grid */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { icon: <Swords size={16} />, value: Number(voteCount).toLocaleString(), label: "Predictions", color: "var(--color-accent)" },
+          { icon: <Flame size={16} />,  value: (dbUser?.loginStreak ?? 0).toString(), label: "Day Streak", color: "#f59e0b" },
+          { icon: <Coins size={16} />,  value: balance.toLocaleString(),  label: "Points",     color: "#22c55e" },
+        ].map(({ icon, value, label, color }) => (
+          <div key={label} className="p-4 text-center" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+            <div className="flex justify-center mb-1" style={{ color }}>{icon}</div>
+            <p className="text-2xl font-black" style={{ color }}>{value}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest mt-1" style={{ color: "var(--color-text-muted)" }}>{label}</p>
+          </div>
+        ))}
       </div>
 
       {/* Quick links */}
-      <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl divide-y divide-[var(--color-border)]">
+      <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+        <Link href="/ranks"
+          className="flex items-center gap-3 px-5 py-4 transition-colors"
+          style={{ borderBottom: "1px solid var(--color-border)" }}>
+          <Star size={16} style={{ color: "var(--color-text-muted)" }} />
+          <span className="text-sm font-semibold">Ranks & How to Earn XP</span>
+        </Link>
         <Link href="/battles"
-          className="flex items-center gap-3 px-5 py-4 hover:bg-[var(--color-surface-hover)] transition-colors">
-          <Swords size={16} className="text-[var(--color-text-muted)]" />
+          className="flex items-center gap-3 px-5 py-4 transition-colors"
+          style={{ borderBottom: "1px solid var(--color-border)" }}>
+          <Swords size={16} style={{ color: "var(--color-text-muted)" }} />
           <span className="text-sm font-semibold">Browse Battles</span>
         </Link>
         <Link href="/characters"
-          className="flex items-center gap-3 px-5 py-4 hover:bg-[var(--color-surface-hover)] transition-colors">
-          <Shield size={16} className="text-[var(--color-text-muted)]" />
+          className="flex items-center gap-3 px-5 py-4 transition-colors"
+          style={{ borderBottom: "1px solid var(--color-border)" }}>
+          <Shield size={16} style={{ color: "var(--color-text-muted)" }} />
           <span className="text-sm font-semibold">Browse Characters</span>
         </Link>
         <form
@@ -151,7 +164,7 @@ export default async function ProfilePage() {
         >
           <button
             type="submit"
-            className="w-full flex items-center gap-3 px-5 py-4 hover:bg-[var(--color-surface-hover)] transition-colors text-left text-red-400"
+            className="w-full flex items-center gap-3 px-5 py-4 text-left text-red-400"
           >
             <LogOut size={16} />
             <span className="text-sm font-semibold">Sign Out</span>

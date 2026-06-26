@@ -3,8 +3,9 @@
 import { useState, useTransition } from "react";
 import { RadarChart } from "@/components/radar-chart";
 import { submitEntityStatsAction } from "@/app/actions/entity-stats";
-import { Info, Save } from "lucide-react";
+import { Info, Save, Lock } from "lucide-react";
 import type { RadarStat } from "@/lib/queries";
+import { SERGEANT_RANK_INDEX, RANKS, type RankName } from "@/lib/ranks";
 
 const CLIP = "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)";
 const GLOW_ACCENT = "inset 0 0 12px rgba(249,115,22,0.55), inset 0 0 30px rgba(249,115,22,0.25)";
@@ -28,6 +29,8 @@ type Props = {
   communityStats: RadarStat[];
   userStats:      Record<string, number>;
   isLoggedIn:     boolean;
+  userRank:       RankName | null;
+  xpNeeded:       number | null;
   seriesColor:    string;
 };
 
@@ -52,8 +55,16 @@ function Tip({ text, children }: { text: string; children: React.ReactNode }) {
 }
 
 export function EntityStatsPanel({
-  variantId, entitySlug, entityStats, communityStats, userStats, isLoggedIn, seriesColor,
+  variantId, entitySlug, entityStats, communityStats, userStats, isLoggedIn, userRank, xpNeeded, seriesColor,
 }: Props) {
+  const userRankIndex = userRank ? RANKS.findIndex((r) => r.name === userRank) : -1;
+  const canRate = isLoggedIn && userRankIndex >= SERGEANT_RANK_INDEX;
+
+  function fireRankGate() {
+    window.dispatchEvent(new CustomEvent("awb:rankgate", {
+      detail: { required: "Sergeant", current: userRank ?? null, xpNeeded: xpNeeded ?? null },
+    }));
+  }
   const axes = entityStats.length > 0 ? entityStats : communityStats;
 
   const [sliderValues, setSliderValues] = useState<Record<string, number>>(
@@ -61,9 +72,10 @@ export function EntityStatsPanel({
       axes.map((s) => [s.slug, userStats[s.slug] ?? entityStats.find((e) => e.slug === s.slug)?.value ?? 50])
     )
   );
-  const [success, setSuccess] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
-  const [isPending, startTx]  = useTransition();
+  const [success, setSuccess]         = useState(false);
+  const [pointsAwarded, setPointsAwarded] = useState(0);
+  const [error, setError]             = useState<string | null>(null);
+  const [isPending, startTx]          = useTransition();
 
   const sliderStatsA: RadarStat[] = axes.map((s) => ({
     ...s, value: sliderValues[s.slug] ?? 50,
@@ -73,8 +85,12 @@ export function EntityStatsPanel({
     setError(null);
     startTx(async () => {
       const result = await submitEntityStatsAction(variantId, entitySlug, sliderValues);
-      if (result.ok) setSuccess(true);
-      else setError("Something went wrong. Try again.");
+      if (result.ok) {
+        setSuccess(true);
+        setPointsAwarded(result.pointsAwarded ?? 0);
+      } else {
+        setError("Something went wrong. Try again.");
+      }
     });
   }
 
@@ -94,7 +110,7 @@ export function EntityStatsPanel({
       {/* Chart */}
       <div className="flex flex-col items-center gap-3">
         <RadarChart
-          statsA={isLoggedIn ? sliderStatsA : []}
+          statsA={canRate ? sliderStatsA : []}
           statsB={[]}
           statsC={entityStats}
           colorA="var(--color-accent)"
@@ -109,7 +125,7 @@ export function EntityStatsPanel({
               Base Stats
             </span>
           )}
-          {isLoggedIn && (
+          {canRate && (
             <span className="flex items-center gap-2 text-[10px] font-bold tracking-wider uppercase"
               style={{ color: "var(--color-accent)" }}>
               <span style={{ width: 16, height: 2, background: "var(--color-accent)", display: "inline-block" }} />
@@ -168,8 +184,15 @@ export function EntityStatsPanel({
               Sign in to rate
             </span>
           )}
+          {isLoggedIn && !canRate && (
+            <span className="flex items-center gap-1 text-[10px]" style={{ color: "var(--color-text-ghost)" }}>
+              <Lock size={9} />
+              Sergeant rank required
+            </span>
+          )}
         </div>
 
+        <div onClick={!canRate ? fireRankGate : undefined} style={{ cursor: !canRate ? "pointer" : undefined }}>
         {STATS.filter((s) => axes.some((a) => a.slug === s.slug)).map((stat) => {
           const val = sliderValues[stat.slug] ?? 50;
           const gradient = `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${val}%, var(--color-border) ${val}%, var(--color-border) 100%)`;
@@ -178,7 +201,7 @@ export function EntityStatsPanel({
               <span className="text-sm w-5 text-center shrink-0 select-none leading-none">{stat.emoji}</span>
               <div className="flex items-center gap-1 shrink-0" style={{ width: 96 }}>
                 <span className="text-[10px] font-black tracking-wide uppercase"
-                  style={{ color: isLoggedIn ? "var(--color-text-muted)" : "var(--color-text-ghost)" }}>
+                  style={{ color: canRate ? "var(--color-text-muted)" : "var(--color-text-ghost)" }}>
                   {stat.name}
                 </span>
                 <Tip text={stat.tip}>
@@ -196,7 +219,7 @@ export function EntityStatsPanel({
                 <input
                   type="range" min={0} max={100}
                   value={val}
-                  disabled={!isLoggedIn || isPending}
+                  disabled={!canRate || isPending}
                   onChange={(e) => {
                     setSuccess(false);
                     setSliderValues((p) => ({ ...p, [stat.slug]: Number(e.target.value) }));
@@ -206,14 +229,15 @@ export function EntityStatsPanel({
                 />
               </div>
               <span className="text-[10px] font-black w-7 text-right tabular-nums"
-                style={{ color: isLoggedIn ? "var(--color-accent)" : "var(--color-text-ghost)" }}>
+                style={{ color: canRate ? "var(--color-accent)" : "var(--color-text-ghost)" }}>
                 {val}
               </span>
             </div>
           );
         })}
+        </div>
 
-        {isLoggedIn && (
+        {canRate && (
           <div className="pt-3 flex items-center gap-3">
             <div style={{
               flex: 1,
@@ -238,6 +262,7 @@ export function EntityStatsPanel({
         {success && (
           <p className="text-xs text-emerald-400 pt-1">
             Rating saved — community average updated.
+            {pointsAwarded > 0 && ` +${pointsAwarded} XP earned!`}
           </p>
         )}
       </div>

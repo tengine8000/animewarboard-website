@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Nav } from "@/components/nav";
 import { PageViewTracker } from "@/components/page-view-tracker";
+import { DailyLoginTracker } from "@/components/daily-login-tracker";
+import { RankGateToast } from "@/components/rank-gate-toast";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -34,6 +36,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Suspense fallback={null}>
             <PageViewTracker />
           </Suspense>
+          <DailyLoginTracker />
+          <RankGateToast />
         </ThemeProvider>
       </body>
     </html>

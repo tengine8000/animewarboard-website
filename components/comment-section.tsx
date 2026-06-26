@@ -6,6 +6,7 @@ import { ThumbsUp, ThumbsDown, CornerDownRight } from "lucide-react";
 import { postCommentAction, toggleCommentVoteAction } from "@/app/actions/comment";
 import type { CommentRow } from "@/lib/queries";
 import Link from "next/link";
+import { RankBadge, ModBadge } from "@/components/rank-badge";
 
 type Props = {
   type:        "matchup" | "entity";
@@ -140,10 +141,12 @@ function CommentCard({
       <div className="flex gap-3">
         <Avatar initial={initial} image={comment.user.image} />
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="text-xs font-black" style={{ color: "var(--color-text-base)" }}>
               {comment.user.name ?? "Anonymous"}
             </span>
+            {comment.user.role === "moderator" && <ModBadge />}
+            <RankBadge rank={comment.user.rank} size="xs" />
             <span className="text-[10px]" style={{ color: "var(--color-text-ghost)" }}>
               {formatAge(comment.createdAt)}
             </span>
