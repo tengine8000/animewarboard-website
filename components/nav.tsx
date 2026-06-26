@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Swords, ChevronDown } from "lucide-react";
+import { Swords } from "lucide-react";
 import { auth } from "@/auth";
 import { ThemeToggle } from "./theme-toggle";
 import { SearchBar } from "./search-bar";
+import { MobileMenuButton } from "./mobile-menu";
 
 export async function Nav() {
   const session = await auth();
@@ -51,9 +52,10 @@ export async function Nav() {
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
 
+          {/* Desktop auth — hidden on mobile (accessible via hamburger drawer) */}
           {user ? (
             <Link href="/profile"
-              className="flex items-center gap-2 text-sm text-[var(--color-text-base)] px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors">
+              className="hidden md:flex items-center gap-2 text-sm text-[var(--color-text-base)] px-3 py-1.5 rounded-lg border border-[var(--color-border)] hover:border-[var(--color-accent)] transition-colors">
               {user.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={user.image} alt={user.name ?? ""} className="w-5 h-5 rounded-full object-cover" />
@@ -62,10 +64,10 @@ export async function Nav() {
                   {(user.name ?? user.email ?? "?")[0].toUpperCase()}
                 </span>
               )}
-              <span className="hidden md:inline">{user.name ?? "Profile"}</span>
+              <span>{user.name ?? "Profile"}</span>
             </Link>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               <Link href="/login"
                 className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-base)] px-3 py-1.5 rounded-lg transition-colors">
                 Sign In
@@ -76,6 +78,9 @@ export async function Nav() {
               </Link>
             </div>
           )}
+
+          {/* Mobile hamburger */}
+          <MobileMenuButton user={user ? { name: user.name, email: user.email, image: user.image } : null} />
         </div>
       </div>
     </header>
