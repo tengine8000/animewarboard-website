@@ -66,7 +66,9 @@ export function CharacterVariantsSection({
                   }`}
                 >
                   {v.imageUrl && (
-                    <Image src={v.imageUrl} alt={v.name} width={20} height={20} className="rounded-full object-cover" />
+                    <div className="relative w-5 h-5 rounded-full overflow-hidden shrink-0">
+                      <Image src={v.imageUrl} alt={v.name} fill sizes="20px" className="object-cover" />
+                    </div>
                   )}
                   {v.name}
                 </button>
@@ -79,11 +81,11 @@ export function CharacterVariantsSection({
             className="flex items-center gap-4 p-4 rounded-2xl border"
             style={{ borderColor: `${seriesColor}44`, background: `${seriesColor}08` }}
           >
-            <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0"
+            <div className="relative w-14 h-14 rounded-xl overflow-hidden shrink-0"
               style={{ border: `1px solid ${seriesColor}44` }}>
               {displayImage ? (
-                <Image src={displayImage} alt={selected.name} width={56} height={56}
-                  className="object-cover object-top w-full h-full" />
+                <Image src={displayImage} alt={selected.name} fill sizes="56px"
+                  className="object-cover object-top" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-xl font-black"
                   style={{ background: `${seriesColor}22`, color: seriesColor }}>

@@ -120,8 +120,8 @@ export function EntityStatsPanel({
         <div className="flex gap-4 flex-wrap justify-center">
           {entityStats.length > 0 && (
             <span className="flex items-center gap-2 text-[10px] font-bold tracking-wider uppercase"
-              style={{ color: "rgba(255,255,255,0.75)" }}>
-              <span style={{ width: 16, height: 0, borderTop: "1.5px dashed rgba(255,255,255,0.75)", display: "inline-block" }} />
+              style={{ color: "var(--color-chart-community)" }}>
+              <span style={{ width: 16, height: 0, borderTop: "1.5px dashed var(--color-chart-community)", display: "inline-block" }} />
               Base Stats
             </span>
           )}
@@ -146,7 +146,7 @@ export function EntityStatsPanel({
           return (
             <div key={stat.slug} className="flex items-center gap-3">
               <span className="text-sm w-5 text-center shrink-0 select-none leading-none">{stat.emoji}</span>
-              <div className="flex items-center gap-1 shrink-0" style={{ width: 96 }}>
+              <div className="flex items-center gap-1 shrink-0 w-16 sm:w-24">
                 <span className="text-[10px] font-black tracking-wide uppercase"
                   style={{ color: "var(--color-text-muted)" }}>
                   {stat.name}
@@ -192,14 +192,20 @@ export function EntityStatsPanel({
           )}
         </div>
 
-        <div onClick={!canRate ? fireRankGate : undefined} style={{ cursor: !canRate ? "pointer" : undefined }}>
+        <div style={{ position: "relative" }}>
+          {!canRate && (
+            <div
+              onClick={fireRankGate}
+              style={{ position: "absolute", inset: 0, zIndex: 10, cursor: "pointer" }}
+            />
+          )}
         {STATS.filter((s) => axes.some((a) => a.slug === s.slug)).map((stat) => {
           const val = sliderValues[stat.slug] ?? 50;
           const gradient = `linear-gradient(to right, var(--color-accent) 0%, var(--color-accent) ${val}%, var(--color-border) ${val}%, var(--color-border) 100%)`;
           return (
             <div key={stat.slug} className="flex items-center gap-3 py-0.5">
               <span className="text-sm w-5 text-center shrink-0 select-none leading-none">{stat.emoji}</span>
-              <div className="flex items-center gap-1 shrink-0" style={{ width: 96 }}>
+              <div className="flex items-center gap-1 shrink-0 w-16 sm:w-24">
                 <span className="text-[10px] font-black tracking-wide uppercase"
                   style={{ color: canRate ? "var(--color-text-muted)" : "var(--color-text-ghost)" }}>
                   {stat.name}

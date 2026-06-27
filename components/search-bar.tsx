@@ -49,6 +49,7 @@ export function SearchBar() {
           onFocus={() => results && setOpen(true)}
           placeholder="Search characters, anime…"
           className="bg-transparent text-sm text-[var(--color-text-base)] placeholder:text-[var(--color-text-muted)] outline-none w-full"
+          suppressHydrationWarning
         />
         {query && (
           <button onClick={() => { setQuery(""); setResults(null); setOpen(false); }}>

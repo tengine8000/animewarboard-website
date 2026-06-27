@@ -102,13 +102,13 @@ export default async function CharacterPage({ params }: Props) {
       </nav>
 
       {/* Profile header */}
-      <div className="flex flex-col sm:flex-row gap-8 items-start">
+      <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 items-center sm:items-start">
         <div className="shrink-0">
-          <div className="w-40 h-40 rounded-2xl overflow-hidden"
+          <div className="relative w-40 h-40 rounded-2xl overflow-hidden"
             style={{ border: `2px solid ${seriesColor}44` }}>
             {imageUrl ? (
-              <Image src={imageUrl} alt={entity.name} width={160} height={160}
-                className="object-cover object-top w-full h-full" />
+              <Image src={imageUrl} alt={entity.name} fill sizes="160px"
+                className="object-cover object-top" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-6xl font-black"
                 style={{
@@ -121,14 +121,14 @@ export default async function CharacterPage({ params }: Props) {
           </div>
         </div>
 
-        <div className="space-y-3 flex-1">
-          <div>
+        <div className="space-y-3 flex-1 w-full sm:w-auto">
+          <div className="text-center sm:text-left">
             <Link href={`/anime/${entity.series.slug}`}
               className="text-xs font-semibold uppercase tracking-widest hover:underline"
               style={{ color: "var(--color-accent)" }}>
               {entity.series.name}
             </Link>
-            <h1 className="text-4xl font-black tracking-tight mt-1">{entity.name}</h1>
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1">{entity.name}</h1>
           </div>
 
           {entity.bio && (
@@ -137,7 +137,7 @@ export default async function CharacterPage({ params }: Props) {
             </p>
           )}
 
-          <div className="flex gap-4">
+          <div className="flex gap-4 justify-center sm:justify-start">
             {[
               { label: "W", value: battleRecord.wins,   color: "text-emerald-500" },
               { label: "L", value: battleRecord.losses, color: "text-[var(--color-side-a)]" },
@@ -150,12 +150,14 @@ export default async function CharacterPage({ params }: Props) {
             ))}
           </div>
 
-          <Link href={`/battles?character=${entity.slug}`}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-xl transition-colors"
-            style={{ background: "var(--color-accent)" }}>
-            <Swords size={14} />
-            View Battles
-          </Link>
+          <div className="flex justify-center sm:justify-start">
+            <Link href={`/battles?character=${entity.slug}`}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-xl transition-colors"
+              style={{ background: "var(--color-accent)" }}>
+              <Swords size={14} />
+              View Battles
+            </Link>
+          </div>
         </div>
       </div>
 

@@ -25,7 +25,7 @@ export function RankGateToast() {
       if (timerRef.current) clearTimeout(timerRef.current);
       setData(detail);
       setVisible(true);
-      timerRef.current = setTimeout(() => setVisible(false), 4000);
+      timerRef.current = setTimeout(() => setVisible(false), 10000);
     }
     window.addEventListener("awb:rankgate", handler);
     return () => window.removeEventListener("awb:rankgate", handler);
@@ -39,16 +39,15 @@ export function RankGateToast() {
     <div
       style={{
         position: "fixed",
-        bottom: 24,
-        left: "50%",
-        transform: "translateX(-50%)",
+        top: 72,
+        right: 16,
         zIndex: 9999,
         clipPath: CLIP,
         background: "var(--color-border)",
         padding: "1px",
         minWidth: 300,
         maxWidth: "calc(100vw - 32px)",
-        animation: "fadeInUp 0.2s ease",
+        animation: "toastSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
       <div
@@ -85,9 +84,9 @@ export function RankGateToast() {
         </button>
       </div>
       <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(8px); }
-          to   { opacity: 1; transform: translateY(0);   }
+        @keyframes toastSlideIn {
+          from { opacity: 0; transform: translateX(calc(100% + 16px)); }
+          to   { opacity: 1; transform: translateX(0); }
         }
       `}</style>
     </div>

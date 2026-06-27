@@ -39,6 +39,7 @@ export function CharacterCard({ entity, compact = false }: Props) {
             src={entity.imageUrl}
             alt={entity.name}
             fill
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 17vw"
             className="object-cover object-top group-hover:scale-105 transition-transform duration-300"
           />
         ) : (

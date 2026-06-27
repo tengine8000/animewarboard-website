@@ -57,7 +57,7 @@ function FighterPanel({
         }}
       >
         {imageUrl ? (
-          <Image src={imageUrl} alt={entityName} fill style={{ objectFit: "cover", objectPosition: "top" }} />
+          <Image src={imageUrl} alt={entityName} fill sizes="80px" style={{ objectFit: "cover", objectPosition: "top" }} />
         ) : (
           <span>{entityName[0]}</span>
         )}

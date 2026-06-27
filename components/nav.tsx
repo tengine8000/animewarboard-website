@@ -14,7 +14,7 @@ export async function Nav() {
   const unreadCount = user?.id ? await getUnreadNotificationCount(user.id) : 0;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg)]/90 backdrop-blur-sm">
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg)] md:bg-[var(--color-bg)]/90 md:backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0 font-black text-lg tracking-tight">
@@ -73,7 +73,7 @@ export async function Nav() {
                 )}
                 <span>{user.name ?? "Profile"}</span>
               </Link>
-              <form action={signOutAction}>
+              <form action={signOutAction} suppressHydrationWarning>
                 <button
                   type="submit"
                   title="Sign out"

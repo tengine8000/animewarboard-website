@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col bg-[var(--color-bg)] text-[var(--color-text-base)]">
         <ThemeProvider>
           <Nav />
-          <main className="flex-1">
+          <main className="flex-1 pt-14">
             {children}
           </main>
           <Suspense fallback={null}>

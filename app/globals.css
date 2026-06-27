@@ -45,6 +45,7 @@
   --color-chart-tooltip-bg:    #ffffff;
   --color-chart-tooltip-border:#e2e8f0;
   --color-chart-tooltip-text:  #0f172a;
+  --color-chart-community:     #64748b;
 }
 
 .dark {
@@ -89,9 +90,15 @@
   --color-chart-tooltip-bg:    #111224;
   --color-chart-tooltip-border:rgba(255, 255, 255, 0.08);
   --color-chart-tooltip-text:  #f0f0ff;
+  --color-chart-community:     rgba(255, 255, 255, 0.75);
+}
+
+html {
+  overflow-x: clip;
 }
 
 body {
+  overflow-x: clip;
   background-color: var(--color-bg);
   color: var(--color-text-base);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;

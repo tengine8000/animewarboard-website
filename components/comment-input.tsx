@@ -17,6 +17,7 @@ export function CommentInput({ userInitial }: { userInitial: string }) {
         <textarea
           rows={2}
           placeholder="Share your reasoning…"
+          suppressHydrationWarning
           className="w-full text-sm px-3 py-2 resize-none outline-none transition-colors"
           style={{
             background: "var(--color-bg)",

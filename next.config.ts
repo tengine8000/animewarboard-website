@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 604800,
     deviceSizes: [640, 750, 828, 1080, 1200],
   },
-  allowedDevOrigins: ["http://localhost:3000", "http://172.20.10.3:3000"],
+  allowedDevOrigins: ["172.20.10.3"],
   async redirects() {
     return [
       {

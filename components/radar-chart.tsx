@@ -128,7 +128,8 @@ export function RadarChart({
   });
 
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}
+    <svg viewBox={`0 0 ${size} ${size}`}
+      style={{ width: `min(100%, ${size}px)`, height: "auto" }}
       className="overflow-visible" aria-hidden>
 
       <defs>
@@ -143,8 +144,8 @@ export function RadarChart({
         {/* Radial gradient for community polygon — transparent core, white edge */}
         <radialGradient id={`comm-${uid}`} gradientUnits="userSpaceOnUse"
           cx={cx} cy={cy} r={maxR} fx={cx} fy={cy}>
-          <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.02" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.18" />
+          <stop offset="0%"   stopColor="var(--color-chart-community)" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="var(--color-chart-community)" stopOpacity="0.22" />
         </radialGradient>
       </defs>
 
@@ -156,7 +157,7 @@ export function RadarChart({
       {polyC && (
         <polygon points={polyC}
           fill={`url(#comm-${uid})`}
-          stroke="#ffffff" strokeWidth={1.5} strokeOpacity={0.75}
+          stroke="var(--color-chart-community)" strokeWidth={1.5} strokeOpacity={0.85}
           strokeDasharray="4 3" />
       )}
 

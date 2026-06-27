@@ -90,6 +90,7 @@ function CommentInput({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder={placeholder}
+          suppressHydrationWarning
           className="w-full text-sm px-3 py-2 resize-none outline-none transition-colors"
           style={{
             background: "var(--color-bg)",

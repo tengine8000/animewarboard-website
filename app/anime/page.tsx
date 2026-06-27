@@ -39,7 +39,7 @@ export default async function AnimePage() {
               className="group block bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl overflow-hidden hover:border-[var(--color-accent)] transition-all">
               <div className="aspect-[3/2] bg-[var(--color-border)] relative overflow-hidden">
                 {s.coverImage ? (
-                  <Image src={s.coverImage} alt={s.name} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <Image src={s.coverImage} alt={s.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-300" />
                 ) : (
                   (() => {
                     const color = SERIES_PALETTE[s.slug] ?? SERIES_PALETTE.default;
