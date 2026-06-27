@@ -9,6 +9,7 @@ type RankGateEvent = {
   required: RankName;
   current:  RankName | null;
   xpNeeded: number | null;
+  isGuest?: boolean;
 };
 
 const CLIP = "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)";
@@ -63,17 +64,31 @@ export function RankGateToast() {
       >
         <Lock size={16} style={{ color, flexShrink: 0, marginTop: 1 }} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-black" style={{ color }}>
-            {data.required} rank required
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-            {data.xpNeeded !== null && data.xpNeeded > 0
-              ? `You need ${data.xpNeeded.toLocaleString()} more XP to unlock this. `
-              : "Earn more XP to unlock this. "}
-            <Link href="/ranks" className="underline" style={{ color }} onClick={() => setVisible(false)}>
-              See how to earn XP →
-            </Link>
-          </p>
+          {data.isGuest ? (
+            <>
+              <p className="text-sm font-black" style={{ color }}>Sign in to rate</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                Create a free account to rate characters and earn XP.{" "}
+                <Link href="/login" className="underline" style={{ color }} onClick={() => setVisible(false)}>
+                  Sign in →
+                </Link>
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-black" style={{ color }}>
+                {data.required} rank required
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                {data.xpNeeded !== null && data.xpNeeded > 0
+                  ? `You need ${data.xpNeeded.toLocaleString()} more XP to unlock this. `
+                  : "Earn more XP to unlock this. "}
+                <Link href="/ranks" className="underline" style={{ color }} onClick={() => setVisible(false)}>
+                  See how to earn XP →
+                </Link>
+              </p>
+            </>
+          )}
         </div>
         <button
           onClick={() => setVisible(false)}

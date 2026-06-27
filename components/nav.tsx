@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Swords, LogOut } from "lucide-react";
 import { auth } from "@/auth";
 import { ThemeToggle } from "./theme-toggle";
-import { SearchBar } from "./search-bar";
+import { SearchTrigger } from "./search-modal";
 import { MobileMenuButton } from "./mobile-menu";
 import { NotificationBell } from "./notification-bell";
 import { getUnreadNotificationCount } from "@/lib/queries";
@@ -48,10 +48,8 @@ export async function Nav() {
           </Link>
         </nav>
 
-        {/* Search */}
-        <div className="flex-1 max-w-xs hidden sm:block">
-          <SearchBar />
-        </div>
+        {/* Search — icon always visible (mobile + desktop), opens full-screen modal */}
+        <SearchTrigger />
 
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />

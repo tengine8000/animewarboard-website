@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getAdminDashboardStats } from "@/lib/queries";
-import { Settings, TrendingUp, Users, Swords, BarChart2, PlusCircle, UserCog, Inbox } from "lucide-react";
+import { Settings, TrendingUp, Users, Swords, BarChart2, PlusCircle, UserCog, Inbox, List } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Admin Dashboard" };
@@ -65,12 +65,14 @@ export default async function AdminDashboardPage() {
         <h2 className="text-[10px] font-black tracking-widest uppercase" style={{ color: "var(--color-text-ghost)" }}>
           Content & Moderation
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {[
-            { href: "/admin/characters/new", icon: PlusCircle, label: "Add Character",   color: "var(--color-accent)" },
-            { href: "/admin/series/new",     icon: PlusCircle, label: "Add Series",      color: "var(--color-accent)" },
-            { href: "/admin/submissions",    icon: Inbox,       label: "Submissions",    color: "#818cf8" },
-            { href: "/admin/users",          icon: UserCog,     label: "Manage Users",   color: "#22c55e" },
+            { href: "/admin/characters",     icon: List,        label: "Characters",     color: "var(--color-accent)" },
+            { href: "/admin/series",         icon: List,        label: "Series",         color: "var(--color-accent)" },
+            { href: "/admin/characters/new", icon: PlusCircle,  label: "Add Character",  color: "#60a5fa" },
+            { href: "/admin/series/new",     icon: PlusCircle,  label: "Add Series",     color: "#60a5fa" },
+            { href: "/admin/submissions",    icon: Inbox,        label: "Submissions",   color: "#818cf8" },
+            { href: "/admin/users",          icon: UserCog,      label: "Manage Users",  color: "#22c55e" },
           ].map(({ href, icon: Icon, label, color }) => (
             <Link
               key={href}

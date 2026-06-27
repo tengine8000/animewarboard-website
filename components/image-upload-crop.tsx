@@ -10,6 +10,7 @@ type Props = {
   uploadType: string;    // "characters" | "series" — maps to /public/uploads/[type]/
   aspectRatio?: number;  // default 1 (square for character portraits)
   label?: string;
+  currentUrl?: string;   // pre-populate with existing image on edit forms
 };
 
 function centerAspectCrop(mediaW: number, mediaH: number, aspect: number): Crop {
@@ -20,13 +21,13 @@ function centerAspectCrop(mediaW: number, mediaH: number, aspect: number): Crop 
   );
 }
 
-export function ImageUploadCrop({ name, uploadType, aspectRatio = 1, label = "Character Image" }: Props) {
+export function ImageUploadCrop({ name, uploadType, aspectRatio = 1, label = "Character Image", currentUrl }: Props) {
   const [src, setSrc]             = useState<string | null>(null);
   const [crop, setCrop]           = useState<Crop>();
-  const [preview, setPreview]     = useState<string | null>(null);
+  const [preview, setPreview]     = useState<string | null>(currentUrl ?? null);
   const [uploading, setUploading] = useState(false);
   const [error, setError]         = useState<string | null>(null);
-  const [url, setUrl]             = useState<string>("");
+  const [url, setUrl]             = useState<string>(currentUrl ?? "");
   const imgRef                    = useRef<HTMLImageElement>(null);
   const inputRef                  = useRef<HTMLInputElement>(null);
 

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Nav } from "@/components/nav";
+import { Footer } from "@/components/footer";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { DailyLoginTracker } from "@/components/daily-login-tracker";
 import { RankGateToast } from "@/components/rank-gate-toast";
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1 pt-14">
             {children}
           </main>
+          <Footer />
           <Suspense fallback={null}>
             <PageViewTracker />
           </Suspense>

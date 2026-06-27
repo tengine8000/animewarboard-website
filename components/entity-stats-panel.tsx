@@ -62,7 +62,12 @@ export function EntityStatsPanel({
 
   function fireRankGate() {
     window.dispatchEvent(new CustomEvent("awb:rankgate", {
-      detail: { required: "Sergeant", current: userRank ?? null, xpNeeded: xpNeeded ?? null },
+      detail: {
+        required:  "Sergeant",
+        current:   userRank ?? null,
+        xpNeeded:  xpNeeded ?? null,
+        isGuest:   !isLoggedIn,
+      },
     }));
   }
   const axes = entityStats.length > 0 ? entityStats : communityStats;

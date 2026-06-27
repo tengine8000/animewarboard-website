@@ -114,6 +114,83 @@ export async function createCharacterAction(fd: FormData): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Update Character
+// ---------------------------------------------------------------------------
+
+export async function updateCharacterAction(entityId: string, fd: FormData): Promise<void> {
+  const session = await auth();
+  if ((session?.user as any)?.role !== "admin") redirect("/");
+
+  const name     = ((fd.get("name") as string) ?? "").trim();
+  const bio      = (fd.get("bio") as string | null)?.trim() || null;
+  const imageUrl = (fd.get("imageUrl") as string | null) || null;
+  const status   = (fd.get("status") as string | null) || "approved";
+
+  if (!name) redirect(`/admin/characters/${entityId}/edit?error=name_required`);
+
+  await db.update(entities)
+    .set({ name, bio, imageUrl, status: status as "pending" | "approved" | "rejected" })
+    .where(eq(entities.id, entityId));
+
+  revalidatePath("/characters");
+  revalidatePath("/admin/characters");
+  redirect(`/admin/characters/${entityId}/edit?success=1`);
+}
+
+// ---------------------------------------------------------------------------
+// Delete Character
+// ---------------------------------------------------------------------------
+
+export async function deleteCharacterAction(entityId: string): Promise<void> {
+  const session = await auth();
+  if ((session?.user as any)?.role !== "admin") redirect("/");
+
+  await db.delete(entities).where(eq(entities.id, entityId));
+
+  revalidatePath("/characters");
+  revalidatePath("/admin/characters");
+  redirect("/admin/characters?deleted=1");
+}
+
+// ---------------------------------------------------------------------------
+// Update Series
+// ---------------------------------------------------------------------------
+
+export async function updateSeriesAction(categoryId: string, fd: FormData): Promise<void> {
+  const session = await auth();
+  if ((session?.user as any)?.role !== "admin") redirect("/");
+
+  const name        = ((fd.get("name") as string) ?? "").trim();
+  const description = (fd.get("description") as string | null)?.trim() || null;
+  const coverImage  = (fd.get("coverImage") as string | null) || null;
+
+  if (!name) redirect(`/admin/series/${categoryId}/edit?error=name_required`);
+
+  await db.update(categories)
+    .set({ name, description, coverImage })
+    .where(eq(categories.id, categoryId));
+
+  revalidatePath("/anime");
+  revalidatePath("/admin/series");
+  redirect(`/admin/series/${categoryId}/edit?success=1`);
+}
+
+// ---------------------------------------------------------------------------
+// Delete Series
+// ---------------------------------------------------------------------------
+
+export async function deleteSeriesAction(categoryId: string): Promise<void> {
+  const session = await auth();
+  if ((session?.user as any)?.role !== "admin") redirect("/");
+
+  await db.delete(categories).where(eq(categories.id, categoryId));
+
+  revalidatePath("/anime");
+  revalidatePath("/admin/series");
+  redirect("/admin/series?deleted=1");
+}
+
+// ---------------------------------------------------------------------------
 // Approve / Reject Entity Submission
 // ---------------------------------------------------------------------------
 
