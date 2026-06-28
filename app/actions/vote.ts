@@ -15,7 +15,7 @@ export type VotePayload = {
 };
 
 export type VoteResult =
-  | { ok: true }
+  | { ok: true; voteId: string }
   | { ok: false; error: "not_authenticated" | "invalid_payload" | "db_error" };
 
 export async function submitVoteAction(payload: VotePayload): Promise<VoteResult> {
@@ -27,15 +27,19 @@ export async function submitVoteAction(payload: VotePayload): Promise<VoteResult
 
   const userId = session.user.id;
 
+  let voteId: string;
+
   try {
-    // 1. Upsert verdict + difficulty
-    await db
+    // 1. Upsert verdict + difficulty — return id so the client can link to the share page
+    const [voteRow] = await db
       .insert(votes)
       .values({ matchupId, userId, verdict, difficulty })
       .onConflictDoUpdate({
         target: [votes.matchupId, votes.userId],
         set: { verdict, difficulty },
-      });
+      })
+      .returning({ id: votes.id });
+    voteId = voteRow.id;
 
     // 2. Persist slider values into vote_attributes
     if (statValues && Object.keys(statValues).length > 0) {
@@ -72,5 +76,5 @@ export async function submitVoteAction(payload: VotePayload): Promise<VoteResult
   }
 
   revalidatePath(`/battles/${matchupSlug}`);
-  return { ok: true };
+  return { ok: true, voteId };
 }

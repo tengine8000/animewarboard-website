@@ -1144,3 +1144,84 @@ export async function getNotifications(userId: string, limit = 30): Promise<Noti
   `);
   return raw as unknown as NotificationRow[];
 }
+
+// ---------------------------------------------------------------------------
+// Share prediction page data
+// ---------------------------------------------------------------------------
+
+export type ShareParticipant = {
+  name: string;
+  imageUrl: string | null;
+  seriesName: string;
+};
+
+export type SharePageData = {
+  vote: { id: string; verdict: string; difficulty: string };
+  matchupSlug: string;
+  labelA: string;
+  labelB: string;
+  userName: string | null;
+  userStats: Record<string, number>;   // slug → scoreA (user's prediction)
+  communityStats: RadarStat[];          // community averages
+  statOrder: string[];                  // attribute slugs in display order
+  participantsA: ShareParticipant[];
+  participantsB: ShareParticipant[];
+  communityEdge: CommunityEdge;
+  voteSummary: VoteSummary;
+};
+
+export async function getSharePageData(voteId: string): Promise<SharePageData | null> {
+  // Fetch vote
+  const [voteRow] = await db
+    .select({ id: votes.id, verdict: votes.verdict, difficulty: votes.difficulty, matchupId: votes.matchupId, userId: votes.userId })
+    .from(votes)
+    .where(eq(votes.id, voteId))
+    .limit(1);
+  if (!voteRow) return null;
+
+  // Fetch matchup + participants + user in parallel
+  const [matchup] = await db.select({ slug: matchups.slug, sideALabel: matchups.sideALabel, sideBLabel: matchups.sideBLabel })
+    .from(matchups).where(eq(matchups.id, voteRow.matchupId)).limit(1);
+  if (!matchup) return null;
+
+  const [participants, userRow, userStats, communityStats, communityEdge, voteCounts] = await Promise.all([
+    fetchParticipants(voteRow.matchupId),
+    db.select({ name: users.name }).from(users).where(eq(users.id, voteRow.userId)).limit(1),
+    getUserVoteAttributes(voteRow.userId, voteRow.matchupId),
+    getMatchupCommunityStatAverages(voteRow.matchupId),
+    getMatchupCommunityEdge(voteRow.matchupId),
+    db.select({ verdict: votes.verdict, c: count() }).from(votes).where(eq(votes.matchupId, voteRow.matchupId)).groupBy(votes.verdict),
+  ]);
+
+  const sideA = participants.filter((p) => p.side === "a");
+  const sideB = participants.filter((p) => p.side === "b");
+  const labelA = deriveSideLabel(matchup.sideALabel, sideA);
+  const labelB = deriveSideLabel(matchup.sideBLabel, sideB);
+
+  const a = Number(voteCounts.find((v) => v.verdict === "a")?.c  ?? 0);
+  const b = Number(voteCounts.find((v) => v.verdict === "b")?.c  ?? 0);
+  const d = Number(voteCounts.find((v) => v.verdict === "draw")?.c ?? 0);
+
+  return {
+    vote: { id: voteRow.id, verdict: voteRow.verdict, difficulty: voteRow.difficulty },
+    matchupSlug: matchup.slug,
+    labelA,
+    labelB,
+    userName: userRow[0]?.name ?? null,
+    userStats,
+    communityStats,
+    statOrder: communityStats.map((s) => s.slug),
+    participantsA: sideA.map((p) => ({
+      name: p.entity.name,
+      imageUrl: p.variant.imageUrl ?? p.entity.imageUrl,
+      seriesName: p.series.name,
+    })),
+    participantsB: sideB.map((p) => ({
+      name: p.entity.name,
+      imageUrl: p.variant.imageUrl ?? p.entity.imageUrl,
+      seriesName: p.series.name,
+    })),
+    communityEdge,
+    voteSummary: computeVoteSummary(a, b, d),
+  };
+}

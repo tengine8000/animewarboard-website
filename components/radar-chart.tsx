@@ -97,7 +97,7 @@ export function RadarChart({
         key={li}
         points={points}
         fill="none"
-        stroke="var(--color-chart-grid)"
+        stroke={isBoundary ? "var(--color-text-base)" : "var(--color-chart-grid)"}
         strokeWidth={isBoundary ? 1.5 : 0.5}
         strokeOpacity={isBoundary ? 0.9 : 0.5}
         filter={isBoundary ? `url(#${glowId})` : undefined}

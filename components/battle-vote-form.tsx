@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
-import { Swords, Handshake, RotateCcw, CheckCircle, Info } from "lucide-react";
+import { Swords, Handshake, RotateCcw, CheckCircle, Info, Share2 } from "lucide-react";
 import { submitVoteAction } from "@/app/actions/vote";
 import type { VotePayload } from "@/app/actions/vote";
 
 type Verdict    = "a" | "b" | "draw";
 type Difficulty = "very_easy" | "easy" | "medium" | "hard" | "extreme";
-type ExistingVote = { verdict: Verdict; difficulty: Difficulty } | null;
+type ExistingVote = { id: string; verdict: Verdict; difficulty: Difficulty } | null;
 
 type Props = {
   matchupId:         string;
@@ -88,7 +88,8 @@ function ClipCard({ children }: { children: React.ReactNode }) {
 function CardHeader({ num, label, tip }: { num: number; label: string; tip?: string }) {
   return (
     <div className="px-5 py-3 flex items-center justify-center gap-2" style={{ borderBottom: "1px solid var(--color-border)" }}>
-      <p className="text-[11px] font-black tracking-widest uppercase text-center" style={{ color: "var(--color-text-ghost)" }}>
+      <p className="text-[11px] font-black tracking-widest uppercase text-center"
+        style={{ color: "var(--color-text-base)", textShadow: "0 0 8px rgba(232,234,246,0.45), 0 0 20px rgba(232,234,246,0.18)" }}>
         {num}. {label}
       </p>
       {tip && (
@@ -253,6 +254,7 @@ export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA,
   const [statValues, setStatValues] = useState<Record<string, number>>(defaultStats);
   const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [voteId, setVoteId]   = useState<string | null>(existingVote?.id ?? null);
   const [error, setError]     = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -282,7 +284,7 @@ export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA,
     setError(null);
     startTransition(async () => {
       const result = await submitVoteAction({ matchupId, matchupSlug, verdict, difficulty, statValues });
-      if (result.ok) setSuccess(true);
+      if (result.ok) { setVoteId(result.voteId); setSuccess(true); }
       else setError("Something went wrong. Try again.");
     });
   }
@@ -291,14 +293,35 @@ export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA,
   if (success) {
     return (
       <ClipCard>
-        <div className="p-8 text-center space-y-3">
-          <CheckCircle size={36} className="mx-auto text-emerald-400" />
-          <p className="font-black text-xl">Prediction Locked In!</p>
-          <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-            {verdict === "draw" ? "Draw" : verdict === "a" ? labelA : labelB} wins ·{" "}
-            {DIFFICULTIES.find((d) => d.value === difficulty)?.label} difficulty
-          </p>
-          <button onClick={() => setSuccess(false)} className="text-xs hover:underline" style={{ color: "var(--color-accent)" }}>
+        <div className="p-8 text-center space-y-5">
+          <div className="space-y-1">
+            <CheckCircle size={36} className="mx-auto text-emerald-400" />
+            <p className="font-black text-xl">Prediction Locked In!</p>
+            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
+              {verdict === "draw" ? "Draw" : verdict === "a" ? labelA : labelB} wins ·{" "}
+              {DIFFICULTIES.find((d) => d.value === difficulty)?.label} difficulty
+            </p>
+          </div>
+
+          {/* Primary CTA — Share */}
+          {voteId && (
+            <div style={{ filter: "drop-shadow(0 0 2px rgba(249,115,22,0.6)) drop-shadow(0 0 6px rgba(249,115,22,0.35))" }}>
+              <Link
+                href={`/battles/${matchupSlug}/share/${voteId}`}
+                className="flex items-center justify-center gap-2.5 w-full font-black py-4 text-sm tracking-widest uppercase"
+                style={{ clipPath: CLIP, background: "var(--color-accent)", color: "#fff" }}
+              >
+                <Share2 size={16} /> Share My Prediction
+              </Link>
+            </div>
+          )}
+
+          {/* Secondary — Edit */}
+          <button
+            onClick={() => setSuccess(false)}
+            className="text-xs hover:underline"
+            style={{ color: "var(--color-text-ghost)" }}
+          >
             Edit prediction
           </button>
         </div>
@@ -310,13 +333,6 @@ export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA,
 
   return (
     <div className="space-y-3">
-      {isEditMode && (
-        <p className="text-xs text-center py-2"
-          style={{ color: "var(--color-text-ghost)", background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
-          Updating your existing prediction
-        </p>
-      )}
-
       {/* ── 1 + 2. VERDICT & DIFFICULTY — one card, gray divider ────────── */}
       <div style={{ position: "relative" }}>
         <ClipCard>
@@ -371,11 +387,21 @@ export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA,
             </span>
           </div>
 
-          <div className="space-y-1">
-            {STATS.map((stat) => (
-              <StatSlider key={stat.slug} stat={stat} value={statValues[stat.slug] ?? 50}
-                onChange={(v) => setStatValues((p) => ({ ...p, [stat.slug]: v }))} disabled={!isLoggedIn} />
-            ))}
+          <div style={{ position: "relative" }}>
+            {!isLoggedIn && (
+              <div
+                onClick={() => window.dispatchEvent(new CustomEvent("awb:rankgate", {
+                  detail: { required: "Private", current: null, xpNeeded: null, isGuest: true },
+                }))}
+                style={{ position: "absolute", inset: 0, zIndex: 10, cursor: "pointer" }}
+              />
+            )}
+            <div className="space-y-1">
+              {STATS.map((stat) => (
+                <StatSlider key={stat.slug} stat={stat} value={statValues[stat.slug] ?? 50}
+                  onChange={(v) => setStatValues((p) => ({ ...p, [stat.slug]: v }))} disabled={!isLoggedIn} />
+              ))}
+            </div>
           </div>
 
           {!isLoggedIn && (
@@ -418,6 +444,19 @@ export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA,
             </div>
           </div>
         </ClipCard>
+      )}
+
+      {/* Share prediction — only when logged in and vote exists */}
+      {isLoggedIn && existingVote?.id && (
+        <div className="flex justify-center pt-1">
+          <Link
+            href={`/battles/${matchupSlug}/share/${existingVote.id}`}
+            className="flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-lg transition-colors"
+            style={{ border: "1px solid var(--color-border)", color: "var(--color-text-muted)" }}
+          >
+            🔗 Share my prediction
+          </Link>
+        </div>
       )}
 
       {/* Action bar */}

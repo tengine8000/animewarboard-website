@@ -77,10 +77,10 @@ export default async function BattlePage({ params }: Props) {
   ]);
 
   const summary = voteSummary;
-  const firstA  = sideA[0] as Participant | undefined;
-  const firstB  = sideB[0] as Participant | undefined;
-  const imageA  = firstA?.variant.imageUrl ?? firstA?.entity.imageUrl ?? null;
-  const imageB  = firstB?.variant.imageUrl ?? firstB?.entity.imageUrl ?? null;
+  const firstA = sideA[0] as Participant | undefined;
+  const firstB = sideB[0] as Participant | undefined;
+  const imageA = firstA?.variant.imageUrl ?? firstA?.entity.imageUrl ?? null;
+  const imageB = firstB?.variant.imageUrl ?? firstB?.entity.imageUrl ?? null;
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://animewarboard.com";
   const jsonLd = {
@@ -100,8 +100,8 @@ export default async function BattlePage({ params }: Props) {
 
       {/* ── BATTLE OVERVIEW ───────────────────────────────────────────── */}
       <BattleOverviewCard
-        firstA={firstA}
-        firstB={firstB}
+        sideA={sideA as Participant[]}
+        sideB={sideB as Participant[]}
         radarStatsA={radarStats.a}
         radarStatsB={radarStats.b}
         communityStats={communityStats}
@@ -109,6 +109,9 @@ export default async function BattlePage({ params }: Props) {
         summary={summary}
         labelA={labelA}
         labelB={labelB}
+        userName={session?.user?.name ?? null}
+        userVerdict={(existingVote?.verdict ?? null) as "a" | "b" | "draw" | null}
+        userDifficulty={existingVote?.difficulty ?? null}
       />
 
       {/* ── Prediction Form ───────────────────────────────────────────── */}
@@ -123,6 +126,7 @@ export default async function BattlePage({ params }: Props) {
         existingVote={
           existingVote
             ? {
+                id:         existingVote.id,
                 verdict:    existingVote.verdict    as "a" | "b" | "draw",
                 difficulty: existingVote.difficulty as "very_easy" | "easy" | "medium" | "hard" | "extreme",
               }
