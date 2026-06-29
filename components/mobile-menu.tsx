@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Swords, Zap, LogOut } from "lucide-react";
+import { Menu, X, Zap, LogOut } from "lucide-react";
+import { LogoMark } from "./logo-mark";
 import { signOutAction } from "@/app/actions/auth";
 import { SearchBar } from "./search-bar";
 
@@ -132,7 +133,7 @@ export function MobileMenuButton({ user }: { user: User | null }) {
               letterSpacing: "-0.02em",
             }}
           >
-            <Swords size={17} style={{ color: "var(--color-accent)" }} />
+            <LogoMark size={28} />
             <span>ANIME<span style={{ color: "var(--color-accent)" }}>WAR</span>BOARD</span>
           </Link>
           <button

@@ -36,17 +36,19 @@ export default async function AdminUsersPage({
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-      <div className="flex items-center gap-3 flex-wrap">
-        <Link href="/admin" style={{ color: "var(--color-text-muted)" }}>
-          <ArrowLeft size={16} />
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-xl font-black tracking-tight">User Management</h1>
-          <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-            {users.length} user{users.length !== 1 ? "s" : ""} shown
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <Link href="/admin" style={{ color: "var(--color-text-muted)", flexShrink: 0 }}>
+            <ArrowLeft size={16} />
+          </Link>
+          <div className="min-w-0">
+            <h1 className="text-xl font-black tracking-tight">User Management</h1>
+            <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+              {users.length} user{users.length !== 1 ? "s" : ""} shown
+            </p>
+          </div>
         </div>
-        <form method="GET">
+        <form method="GET" className="w-full sm:w-auto">
           <input
             name="q"
             defaultValue={search}
@@ -58,7 +60,7 @@ export default async function AdminUsersPage({
               background: "var(--color-surface)",
               color: "var(--color-text-base)",
               fontSize: "13px",
-              width: "240px",
+              width: "100%",
             }}
           />
         </form>

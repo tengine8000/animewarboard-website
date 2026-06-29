@@ -4,8 +4,9 @@ import { auth } from "@/auth";
 import Link from "next/link";
 import { Zap, Coins } from "lucide-react";
 import { getAdminSettings, getUserPointSummary } from "@/lib/points";
-import { RANKS, RANK_COLORS, RANK_ICONS } from "@/lib/ranks";
+import { RANKS, RANK_COLORS } from "@/lib/ranks";
 import { RankBadge } from "@/components/rank-badge";
+import { RankIcon } from "@/components/rank-icons";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -56,7 +57,6 @@ export default async function RanksPage() {
     name:  r.name,
     xp:    r.settingKey ? (settings[r.settingKey] ?? r.defaultXp) : 0,
     color: RANK_COLORS[r.name],
-    icon:  RANK_ICONS[r.name],
   }));
 
   const streakBonus = (() => {
@@ -83,8 +83,8 @@ export default async function RanksPage() {
         <ClipCard borderColor={`${RANK_COLORS[pointSummary.rank]}88`}>
           <div className="p-5 space-y-4">
             <div className="flex items-center gap-4">
-              <div className="text-4xl select-none" style={{ filter: `drop-shadow(0 0 6px ${RANK_COLORS[pointSummary.rank]}99)` }}>
-                {RANK_ICONS[pointSummary.rank]}
+              <div className="inline-flex items-center select-none" style={{ filter: `drop-shadow(0 0 6px ${RANK_COLORS[pointSummary.rank]}99)` }}>
+                <RankIcon rank={pointSummary.rank} size={40} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -148,9 +148,9 @@ export default async function RanksPage() {
                   background: isCurrentRank ? `${r.color}0d` : "transparent",
                 }}
               >
-                <div className="text-2xl select-none w-8 text-center shrink-0"
-                  style={{ opacity: isPastRank || isCurrentRank ? 1 : 0.4 }}>
-                  {r.icon}
+                <div className="inline-flex items-center justify-center w-8 shrink-0 select-none"
+                  style={{ opacity: isPastRank || isCurrentRank ? 1 : 0.4, color: r.color }}>
+                  <RankIcon rank={r.name} size={24} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">

@@ -184,7 +184,7 @@ export function ImageUploadCrop({ name, uploadType, aspectRatio = 1, label = "Ch
                 gap: "6px",
               }}
             >
-              {uploading ? <><Loader size={13} style={{ animation: "spin 1s linear infinite" }} /> Uploading…</> : "Crop & Upload"}
+              {uploading ? <><Loader size={13} className="animate-spin" /> Uploading…</> : "Crop & Upload"}
             </button>
             <button
               type="button"
@@ -231,8 +231,6 @@ export function ImageUploadCrop({ name, uploadType, aspectRatio = 1, label = "Ch
       {error && (
         <p style={{ fontSize: "11px", color: "#ef4444", fontWeight: 600 }}>{error}</p>
       )}
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

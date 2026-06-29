@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Swords } from "lucide-react";
+import { LogoMark } from "./logo-mark";
 
 const NAV_LINKS = [
   { label: "Battles",      href: "/battles" },
@@ -28,8 +28,8 @@ export function Footer() {
 
           {/* Brand */}
           <div className="col-span-2 sm:col-span-1 flex flex-col gap-4">
-            <Link href="/" className="flex items-center gap-2 font-black text-lg tracking-tight w-fit">
-              <Swords size={20} className="text-[var(--color-accent)]" />
+            <Link href="/" className="flex items-center gap-2 font-black text-base tracking-tight w-fit">
+              <LogoMark size={32} />
               <span>
                 ANIME<span className="text-[var(--color-accent)]">WAR</span>BOARD
               </span>
@@ -100,7 +100,7 @@ export function Footer() {
             All anime characters and series belong to their respective creators and studios. AnimeWarBoard is a fan community platform.
           </p>
           <div className="flex items-center gap-1 text-xs" style={{ color: "var(--color-text-ghost)" }}>
-            <Swords size={11} className="text-[var(--color-accent)]" />
+            <LogoMark size={13} />
             <span>Built for the community</span>
           </div>
         </div>

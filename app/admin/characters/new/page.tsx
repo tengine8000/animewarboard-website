@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import { ImageUploadCrop } from "@/components/image-upload-crop";
+import { StatSlider } from "@/components/admin-stat-slider";
 import { createCharacterAction } from "@/app/actions/admin-content";
 import { getAnimeSeries, getAnimeAttributes } from "@/lib/queries";
 import type { Metadata } from "next";
@@ -59,7 +60,7 @@ export default async function AdminNewCharacterPage({
       <form action={createCharacterAction} style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
 
         {/* Basic info */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Character Name *">
             <input name="name" required placeholder="e.g. Goku" style={inputStyle} />
           </Field>
@@ -104,7 +105,7 @@ export default async function AdminNewCharacterPage({
             <p style={{ fontSize: "11px", fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--color-text-ghost)" }}>
               Base Stats (0–100)
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {attrs.map((a) => (
                 <StatSlider key={a.id} id={a.id} name={a.name} />
               ))}
@@ -120,39 +121,6 @@ export default async function AdminNewCharacterPage({
   );
 }
 
-function StatSlider({ id, name }: { id: string; name: string }) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <label
-          htmlFor={`stat_${id}`}
-          style={{ fontSize: "11px", fontWeight: 700, color: "var(--color-text-muted)" }}
-        >
-          {name}
-        </label>
-        <span
-          id={`val_${id}`}
-          style={{ fontSize: "11px", fontWeight: 900, color: "var(--color-accent)", minWidth: "28px", textAlign: "right" }}
-        >
-          50
-        </span>
-      </div>
-      <input
-        type="range"
-        id={`stat_${id}`}
-        name={`stat_${id}`}
-        min={0}
-        max={100}
-        defaultValue={50}
-        style={{ width: "100%", accentColor: "var(--color-accent)" }}
-        onInput={(e) => {
-          const el = document.getElementById(`val_${id}`);
-          if (el) el.textContent = (e.target as HTMLInputElement).value;
-        }}
-      />
-    </div>
-  );
-}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

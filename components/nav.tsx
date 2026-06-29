@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Swords, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
+import { LogoMark } from "./logo-mark";
 import { auth } from "@/auth";
 import { ThemeToggle } from "./theme-toggle";
 import { SearchTrigger } from "./search-modal";
@@ -17,9 +18,9 @@ export async function Nav() {
     <header className="fixed inset-x-0 top-0 z-40 border-b border-[var(--color-border)] bg-[var(--color-bg)] md:bg-[var(--color-bg)]/90 md:backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 shrink-0 font-black text-lg tracking-tight">
-          <Swords size={20} className="text-[var(--color-accent)]" />
-          <span>
+        <Link href="/" className="flex items-center gap-2 shrink-0">
+          <LogoMark size={38} priority />
+          <span className="font-black text-base tracking-tight hidden sm:block">
             ANIME<span className="text-[var(--color-accent)]">WAR</span>BOARD
           </span>
         </Link>

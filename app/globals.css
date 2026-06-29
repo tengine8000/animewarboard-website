@@ -1,9 +1,28 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Kamikaze";
+  src: url("/fonts/Kamikaze.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Kamikaze";
+  src: url("/fonts/Kamikaze-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
 /* Enable class-based dark mode for Tailwind v4 — required for next-themes */
 @variant dark (&:where(.dark, .dark *));
 
 :root {
+  /* Heading font */
+  --font-heading: "Kamikaze", "Impact", sans-serif;
+
   /* Backgrounds */
   --color-bg:                  #f0f2f5;
   --color-surface:             #ffffff;
@@ -103,6 +122,17 @@ body {
   color: var(--color-text-base);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  letter-spacing: 3px;
+}
+
+/* Logo theme swap */
+.logo-light { display: block !important; }
+.logo-dark  { display: none  !important; }
+.dark .logo-light { display: none  !important; }
+.dark .logo-dark  { display: block !important; }
 
 /* ── Animations ─────────────────────────────────────────────────────────── */
 @keyframes fadeSlideIn {

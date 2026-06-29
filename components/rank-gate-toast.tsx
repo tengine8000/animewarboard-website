@@ -34,7 +34,9 @@ export function RankGateToast() {
 
   if (!visible || !data) return null;
 
-  const color = RANK_COLORS[data.required];
+  // Guest toasts always use the Sergeant cyan so they look consistent regardless
+  // of which surface fired the event (battle sliders use "Private", entity stats use "Sergeant")
+  const color = data.isGuest ? "#06b6d4" : RANK_COLORS[data.required];
 
   return (
     <div

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
+import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
@@ -17,6 +18,12 @@ export const metadata: Metadata = {
   title: { default: "AnimeWarBoard", template: "%s | AnimeWarBoard" },
   description: "Make your case. Settle the debate. Predict anime battles and see how the community stacks up.",
   keywords: ["anime", "battles", "power scaling", "predictions", "who would win"],
+  icons: {
+    icon: [
+      { url: "/logo.png", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   openGraph: { siteName: "AnimeWarBoard", type: "website" },
   twitter: { card: "summary_large_image" },
 };
@@ -24,11 +31,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`} suppressHydrationWarning>
-      <head>
-        {/* Inline script in <head> runs before paint — not inside React body tree, no React 19 warning */}
-        <script dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem('awb-theme')==='light')document.documentElement.classList.remove('dark')}catch(e){}` }} />
-      </head>
       <body className="min-h-full flex flex-col bg-[var(--color-bg)] text-[var(--color-text-base)]">
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem('awb-theme')==='light')document.documentElement.classList.remove('dark')}catch(e){}` }} />
         <ThemeProvider>
           <Nav />
           <main className="flex-1 pt-14">

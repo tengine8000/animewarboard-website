@@ -2,7 +2,8 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { Swords, Loader2 } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
+import { LogoMark } from "./logo-mark";
 import { registerAction } from "@/app/actions/auth";
 
 const INPUT =
@@ -17,7 +18,9 @@ export function RegisterForm({ returnTo }: { returnTo?: string }) {
     <div className="w-full max-w-sm space-y-6">
       <div className="text-center space-y-2">
         <div className="flex justify-center">
-          <Swords size={32} className="text-[var(--color-accent)]" />
+          <div style={{ filter: "drop-shadow(0 0 2px rgba(255,255,255,0.15))" }}>
+            <LogoMark size={52} />
+          </div>
         </div>
         <h1 className="text-2xl font-black tracking-tight">Join the community</h1>
         <p className="text-sm text-[var(--color-text-muted)]">
@@ -85,7 +88,7 @@ export function RegisterForm({ returnTo }: { returnTo?: string }) {
             disabled={pending}
             className="w-full bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-60 text-white font-black py-2.5 rounded-xl text-sm tracking-wide transition-colors flex items-center justify-center gap-2"
           >
-            {pending ? <Loader2 size={14} className="animate-spin" /> : <Swords size={14} />}
+            {pending ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}
             {pending ? "Creating account…" : "CREATE ACCOUNT"}
           </button>
         </form>

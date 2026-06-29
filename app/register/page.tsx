@@ -8,7 +8,7 @@ type Props = { searchParams: Promise<{ returnTo?: string }> };
 export default async function RegisterPage({ searchParams }: Props) {
   const { returnTo } = await searchParams;
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4">
+    <div className="flex flex-col items-center justify-start sm:justify-center px-4 pt-10 pb-16 sm:min-h-[80vh]">
       <RegisterForm returnTo={returnTo} />
     </div>
   );

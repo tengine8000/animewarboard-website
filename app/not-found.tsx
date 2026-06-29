@@ -3,7 +3,7 @@ import { Swords, Home, Users, Tv } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <div className="min-h-[80vh] flex items-center justify-center px-4">
+    <div className="flex flex-col items-center justify-start sm:justify-center px-4 pt-10 pb-16 sm:min-h-[80vh]">
       <div className="max-w-md w-full text-center space-y-8">
 
         {/* Big 404 */}
