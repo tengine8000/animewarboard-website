@@ -120,10 +120,12 @@ export const users = pgTable("users", {
   passwordHash:    text("password_hash"),  // null for OAuth-only users
   role:            userRoleEnum("role").notNull().default("user"),
   isPatron:        boolean("is_patron").notNull().default(false),
-  lastLoginDate:   date("last_login_date"),
-  loginStreak:     integer("login_streak").notNull().default(0),
-  restrictedUntil: timestamp("restricted_until", { withTimezone: true, mode: "date" }),
-  createdAt:       timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  lastLoginDate:      date("last_login_date"),
+  loginStreak:        integer("login_streak").notNull().default(0),
+  restrictedUntil:    timestamp("restricted_until", { withTimezone: true, mode: "date" }),
+  username:           text("username").unique(),
+  usernameChangedAt:  timestamp("username_changed_at", { withTimezone: true, mode: "date" }),
+  createdAt:          timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
 });
 
 // ---------------------------------------------------------------------------

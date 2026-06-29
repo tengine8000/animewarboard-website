@@ -3,11 +3,13 @@ export const dynamic = "force-dynamic";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Pencil } from "lucide-react";
 import { db } from "@/db";
 import { categories } from "@/db/schema";
-import { eq, asc, isNull, and } from "drizzle-orm";
+import { eq, asc, isNull, and, ilike } from "drizzle-orm";
 import { deleteSeriesAction } from "@/app/actions/admin-content";
+import { AdminDeleteButton } from "@/components/admin-delete-button";
+import { AdminSearchBar } from "@/components/admin-search-bar";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Series — Admin" };
@@ -22,6 +24,7 @@ export default async function AdminSeriesPage({
 
   const sp      = await searchParams;
   const deleted = sp.deleted === "1";
+  const q       = sp.q?.trim() ?? "";
 
   const [anime] = await db
     .select({ id: categories.id })
@@ -33,7 +36,10 @@ export default async function AdminSeriesPage({
     ? await db
         .select()
         .from(categories)
-        .where(eq(categories.parentId, anime.id))
+        .where(and(
+          eq(categories.parentId, anime.id),
+          q ? ilike(categories.name, `%${q}%`) : undefined,
+        ))
         .orderBy(asc(categories.name))
     : [];
 
@@ -46,7 +52,7 @@ export default async function AdminSeriesPage({
         <div className="flex-1">
           <h1 className="text-xl font-black tracking-tight">Anime Series</h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-            {rows.length} series
+            {rows.length} series{q ? " (filtered)" : ""}
           </p>
         </div>
         <Link
@@ -57,6 +63,8 @@ export default async function AdminSeriesPage({
           <Plus size={14} /> Add Series
         </Link>
       </div>
+
+      <AdminSearchBar placeholder="Search series…" />
 
       {deleted && (
         <div className="text-sm px-4 py-3 rounded-lg"
@@ -109,17 +117,7 @@ export default async function AdminSeriesPage({
                   >
                     <Pencil size={14} />
                   </Link>
-                  <form action={deleteSeriesAction.bind(null, row.id)}>
-                    <button
-                      type="submit"
-                      className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors hover:text-red-400"
-                      style={{ color: "var(--color-text-muted)" }}
-                      title="Delete"
-                      onClick={(e) => { if (!confirm(`Delete "${row.name}"? This cannot be undone.`)) e.preventDefault(); }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </form>
+                  <AdminDeleteButton action={deleteSeriesAction.bind(null, row.id)} label={row.name} />
                 </div>
               </div>
             ))}

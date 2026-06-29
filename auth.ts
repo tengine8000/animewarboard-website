@@ -10,6 +10,7 @@ import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users, authAccounts, verificationTokens } from "@/db/schema";
+import { generateUniqueUsername } from "@/lib/username";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: DrizzleAdapter(db, {
@@ -81,6 +82,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         (session.user as any).role = token.role;
       }
       return session;
+    },
+  },
+
+  events: {
+    async createUser({ user }) {
+      if (!user.id) return;
+      const username = await generateUniqueUsername();
+      await db.update(users).set({ username }).where(eq(users.id, user.id));
     },
   },
 

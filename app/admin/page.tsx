@@ -69,6 +69,7 @@ export default async function AdminDashboardPage() {
           {[
             { href: "/admin/characters",     icon: List,        label: "Characters",     color: "var(--color-accent)" },
             { href: "/admin/series",         icon: List,        label: "Series",         color: "var(--color-accent)" },
+            { href: "/admin/battles",        icon: Swords,      label: "Battles",        color: "#f87171" },
             { href: "/admin/characters/new", icon: PlusCircle,  label: "Add Character",  color: "#60a5fa" },
             { href: "/admin/series/new",     icon: PlusCircle,  label: "Add Series",     color: "#60a5fa" },
             { href: "/admin/submissions",    icon: Inbox,        label: "Submissions",   color: "#818cf8" },
@@ -103,7 +104,7 @@ export default async function AdminDashboardPage() {
         <h2 className="text-[10px] font-black tracking-widest uppercase" style={{ color: "var(--color-text-ghost)" }}>
           Primary KPIs
         </h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1">
           <ClipCard borderColor="var(--color-accent)">
             <StatBox
               label="Votes / Visitor"

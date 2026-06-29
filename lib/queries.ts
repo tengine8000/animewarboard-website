@@ -318,7 +318,8 @@ export async function getTopLevelCategories() {
     .orderBy(asc(categories.name));
 }
 
-export async function getAnimeSeries() {
+export async function getAnimeSeries(opts: { limit?: number; offset?: number } = {}) {
+  const { limit = 1000, offset = 0 } = opts;
   const [anime] = await db
     .select()
     .from(categories)
@@ -329,7 +330,34 @@ export async function getAnimeSeries() {
     .select()
     .from(categories)
     .where(eq(categories.parentId, anime.id))
-    .orderBy(asc(categories.name));
+    .orderBy(asc(categories.name))
+    .limit(limit)
+    .offset(offset);
+}
+
+export async function getAnimeSeriesCount(): Promise<number> {
+  const [anime] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(and(isNull(categories.parentId), eq(categories.slug, "anime")))
+    .limit(1);
+  if (!anime) return 0;
+  const [{ c }] = await db
+    .select({ c: count() })
+    .from(categories)
+    .where(eq(categories.parentId, anime.id));
+  return Number(c);
+}
+
+export async function getEntitiesCount(opts: { categoryId?: string } = {}): Promise<number> {
+  const [{ c }] = await db
+    .select({ c: count() })
+    .from(entities)
+    .where(and(
+      eq(entities.status, "approved"),
+      opts.categoryId ? eq(entities.categoryId, opts.categoryId) : undefined,
+    ));
+  return Number(c);
 }
 
 export async function getCategoryBySlug(slug: string) {

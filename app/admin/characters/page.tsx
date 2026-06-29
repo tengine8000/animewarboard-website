@@ -3,11 +3,13 @@ export const dynamic = "force-dynamic";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Pencil } from "lucide-react";
 import { db } from "@/db";
 import { entities, categories } from "@/db/schema";
-import { eq, asc, desc } from "drizzle-orm";
+import { eq, desc, ilike, and, asc, isNull } from "drizzle-orm";
 import { deleteCharacterAction } from "@/app/actions/admin-content";
+import { AdminDeleteButton } from "@/components/admin-delete-button";
+import { AdminSearchBar } from "@/components/admin-search-bar";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Characters — Admin" };
@@ -26,22 +28,44 @@ export default async function AdminCharactersPage({
   const session = await auth();
   if ((session?.user as any)?.role !== "admin") redirect("/");
 
-  const sp      = await searchParams;
-  const deleted = sp.deleted === "1";
+  const sp       = await searchParams;
+  const deleted  = sp.deleted === "1";
+  const q        = sp.q?.trim() ?? "";
+  const status   = sp.status ?? "";
+  const seriesId = sp.seriesId ?? "";
 
-  const rows = await db
-    .select({
-      id:       entities.id,
-      name:     entities.name,
-      slug:     entities.slug,
-      status:   entities.status,
-      imageUrl: entities.imageUrl,
-      series:   categories.name,
-      createdAt: entities.createdAt,
-    })
-    .from(entities)
-    .leftJoin(categories, eq(entities.categoryId, categories.id))
-    .orderBy(desc(entities.createdAt));
+  const [animeParent] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(and(isNull(categories.parentId), eq(categories.slug, "anime")))
+    .limit(1);
+
+  const [allSeries, rows] = await Promise.all([
+    animeParent
+      ? db.select({ id: categories.id, name: categories.name })
+          .from(categories)
+          .where(eq(categories.parentId, animeParent.id))
+          .orderBy(asc(categories.name))
+      : Promise.resolve([]),
+    db
+      .select({
+        id:        entities.id,
+        name:      entities.name,
+        slug:      entities.slug,
+        status:    entities.status,
+        imageUrl:  entities.imageUrl,
+        series:    categories.name,
+        createdAt: entities.createdAt,
+      })
+      .from(entities)
+      .leftJoin(categories, eq(entities.categoryId, categories.id))
+      .where(and(
+        q        ? ilike(entities.name, `%${q}%`)     : undefined,
+        status   ? eq(entities.status, status as any) : undefined,
+        seriesId ? eq(entities.categoryId, seriesId)  : undefined,
+      ))
+      .orderBy(desc(entities.createdAt)),
+  ]);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
@@ -53,7 +77,7 @@ export default async function AdminCharactersPage({
         <div className="flex-1">
           <h1 className="text-xl font-black tracking-tight">Characters</h1>
           <p className="text-sm mt-0.5" style={{ color: "var(--color-text-muted)" }}>
-            {rows.length} character{rows.length !== 1 ? "s" : ""}
+            {rows.length} character{rows.length !== 1 ? "s" : ""}{(q || status || seriesId) ? " (filtered)" : ""}
           </p>
         </div>
         <Link
@@ -64,6 +88,26 @@ export default async function AdminCharactersPage({
           <Plus size={14} /> Add Character
         </Link>
       </div>
+
+      <AdminSearchBar
+        placeholder="Search characters…"
+        extraFilters={[
+          {
+            key: "status", label: "All statuses",
+            value: status,
+            options: [
+              { value: "approved", label: "Approved" },
+              { value: "pending",  label: "Pending"  },
+              { value: "rejected", label: "Rejected" },
+            ],
+          },
+          {
+            key: "seriesId", label: "All series",
+            value: seriesId,
+            options: allSeries.map((s) => ({ value: s.id, label: s.name })),
+          },
+        ]}
+      />
 
       {deleted && (
         <div className="text-sm px-4 py-3 rounded-lg" style={{ background: "color-mix(in srgb, #22c55e 12%, transparent)", border: "1px solid #22c55e40", color: "#22c55e" }}>
@@ -113,17 +157,7 @@ export default async function AdminCharactersPage({
                   >
                     <Pencil size={14} />
                   </Link>
-                  <form action={deleteCharacterAction.bind(null, row.id)}>
-                    <button
-                      type="submit"
-                      className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors hover:text-red-400"
-                      style={{ color: "var(--color-text-muted)" }}
-                      title="Delete"
-                      onClick={(e) => { if (!confirm(`Delete "${row.name}"? This cannot be undone.`)) e.preventDefault(); }}
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </form>
+                  <AdminDeleteButton action={deleteCharacterAction.bind(null, row.id)} label={row.name} />
                 </div>
               </div>
             ))}

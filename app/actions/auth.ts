@@ -10,6 +10,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { generateUniqueUsername } from "@/lib/username";
 
 export type AuthState = { error: string } | null;
 
@@ -51,12 +52,16 @@ export async function registerAction(
     .from(users).where(eq(users.email, email)).limit(1);
   if (existing) return { error: "An account with this email already exists." };
 
-  const passwordHash = await bcrypt.hash(password, 12);
+  const [passwordHash, username] = await Promise.all([
+    bcrypt.hash(password, 12),
+    generateUniqueUsername(),
+  ]);
   await db.insert(users).values({
     name,
     email,
     passwordHash,
-    emailVerified: new Date(), // auto-verify credentials signups
+    username,
+    emailVerified: new Date(),
     role: "user",
   });
 

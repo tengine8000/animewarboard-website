@@ -1,7 +1,7 @@
 import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { votes, users } from "@/db/schema";
+import { votes, users, adminSettings } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,6 +10,7 @@ import type { Metadata } from "next";
 import { getUserPointSummary } from "@/lib/points";
 import { RANK_COLORS, RANK_ICONS } from "@/lib/ranks";
 import { RankBadge } from "@/components/rank-badge";
+import { UsernameForm } from "@/components/username-form";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "My Profile" };
@@ -20,11 +21,14 @@ export default async function ProfilePage() {
 
   const userId = session.user.id;
 
-  const [[dbUser], [{ c: voteCount }], pointSummary] = await Promise.all([
+  const [[dbUser], [{ c: voteCount }], pointSummary, cooldownRow] = await Promise.all([
     db.select().from(users).where(eq(users.id, userId)).limit(1),
     db.select({ c: count() }).from(votes).where(eq(votes.userId, userId)),
     getUserPointSummary(userId),
+    db.select({ value: adminSettings.value }).from(adminSettings).where(eq(adminSettings.key, "username_change_cooldown_days")).limit(1),
   ]);
+
+  const cooldownDays = cooldownRow[0]?.value ?? 30;
 
   const { balance, lifetimeXp, rank, nextRank, xpToNext, progressPercent } = pointSummary;
 
@@ -64,6 +68,12 @@ export default async function ProfilePage() {
               <p className="text-sm truncate" style={{ color: "var(--color-text-muted)" }}>
                 {session.user.email}
               </p>
+              {dbUser?.username && (
+                <Link href={`/u/${dbUser.username}`} className="text-sm font-mono hover:underline"
+                  style={{ color: "var(--color-text-ghost)" }}>
+                  @{dbUser.username}
+                </Link>
+              )}
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
@@ -134,6 +144,15 @@ export default async function ProfilePage() {
             <p className="text-[10px] font-semibold uppercase tracking-widest mt-1" style={{ color: "var(--color-text-muted)" }}>{label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Username */}
+      <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+        <UsernameForm
+          current={dbUser?.username ?? ""}
+          cooldownDays={cooldownDays}
+          changedAt={dbUser?.usernameChangedAt ?? null}
+        />
       </div>
 
       {/* Quick links */}

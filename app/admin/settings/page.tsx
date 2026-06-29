@@ -27,11 +27,15 @@ const GROUPS: Record<string, string> = {
   colonel_xp_threshold:       "XP Thresholds",
   general_xp_threshold:       "XP Thresholds",
   field_marshal_xp_threshold: "XP Thresholds",
-  boost_matchup_cost:         "Spend Costs",
-  flag_content_cost:          "Spend Costs",
-  flag_valid_multiplier:      "Spend Costs",
-  flag_invalid_multiplier:    "Spend Costs",
-  content_penalty_points:     "Spend Costs",
+  boost_matchup_cost:              "Spend Costs",
+  flag_content_cost:               "Spend Costs",
+  flag_valid_multiplier:           "Spend Costs",
+  flag_invalid_multiplier:         "Spend Costs",
+  content_penalty_points:          "Spend Costs",
+  username_change_cooldown_days:   "User Settings",
+  characters_per_page:             "Content Display",
+  anime_per_page:                  "Content Display",
+  battles_per_page:                "Content Display",
 };
 
 export default async function AdminSettingsPage() {
