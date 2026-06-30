@@ -9,8 +9,17 @@ import { loginAction } from "@/app/actions/auth";
 const INPUT =
   "w-full bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl px-4 py-2.5 text-sm text-[var(--color-text-base)] placeholder:text-[var(--color-text-ghost)] outline-none focus:border-[var(--color-accent)] transition-colors";
 
-export function LoginForm({ returnTo }: { returnTo?: string }) {
+const ERROR_MESSAGES: Record<string, string> = {
+  Configuration:   "OAuth provider is not configured correctly. Please try email sign-in or contact support.",
+  OAuthSignin:     "Could not start the sign-in flow. Please try again.",
+  OAuthCallback:   "OAuth sign-in failed. Please try again.",
+  OAuthAccountNotLinked: "This email is already registered with a different sign-in method.",
+  Default:         "Something went wrong. Please try again.",
+};
+
+export function LoginForm({ returnTo, urlError }: { returnTo?: string; urlError?: string }) {
   const [state, formAction, pending] = useActionState(loginAction, null);
+  const oauthError = urlError ? (ERROR_MESSAGES[urlError] ?? ERROR_MESSAGES.Default) : null;
 
   return (
     <div className="w-full max-w-sm space-y-6">
@@ -29,9 +38,9 @@ export function LoginForm({ returnTo }: { returnTo?: string }) {
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 space-y-4">
         <form action={formAction} className="space-y-3">
           {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
-          {state?.error && (
+          {(oauthError ?? state?.error) && (
             <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5">
-              {state.error}
+              {oauthError ?? state?.error}
             </p>
           )}
 
@@ -63,23 +72,6 @@ export function LoginForm({ returnTo }: { returnTo?: string }) {
           <div className="flex-1 h-px bg-[var(--color-border)]" />
           <span className="text-xs text-[var(--color-text-ghost)]">or continue with</span>
           <div className="flex-1 h-px bg-[var(--color-border)]" />
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { label: "Google",      href: "/api/auth/signin/google"  },
-            { label: "Discord",     href: "/api/auth/signin/discord" },
-            { label: "Reddit",      href: "/api/auth/signin/reddit"  },
-            { label: "X / Twitter", href: "/api/auth/signin/twitter" },
-          ].map(({ label, href }) => (
-            <Link
-              key={label}
-              href={href}
-              className="flex items-center justify-center py-2 rounded-xl border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-text-base)] transition-colors"
-            >
-              {label}
-            </Link>
-          ))}
         </div>
       </div>
 

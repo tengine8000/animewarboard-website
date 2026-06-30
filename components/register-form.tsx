@@ -11,7 +11,7 @@ const INPUT =
 
 const RANKS = ["Private", "Corporal", "Sergeant", "Colonel", "Field Marshal"];
 
-export function RegisterForm({ returnTo }: { returnTo?: string }) {
+export function RegisterForm({ returnTo, oauthButtons }: { returnTo?: string; oauthButtons?: React.ReactNode }) {
   const [state, formAction, pending] = useActionState(registerAction, null);
 
   return (
@@ -99,22 +99,7 @@ export function RegisterForm({ returnTo }: { returnTo?: string }) {
           <div className="flex-1 h-px bg-[var(--color-border)]" />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { label: "Google",      href: "/api/auth/signin/google"  },
-            { label: "Discord",     href: "/api/auth/signin/discord" },
-            { label: "Reddit",      href: "/api/auth/signin/reddit"  },
-            { label: "X / Twitter", href: "/api/auth/signin/twitter" },
-          ].map(({ label, href }) => (
-            <Link
-              key={label}
-              href={href}
-              className="flex items-center justify-center py-2 rounded-xl border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-text-base)] transition-colors"
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
+        {oauthButtons}
       </div>
 
       <p className="text-center text-sm text-[var(--color-text-muted)]">
