@@ -10,6 +10,8 @@ import {
 import { and, eq, isNull, ilike, inArray } from "drizzle-orm";
 import { createHash } from "crypto";
 import { revalidatePath } from "next/cache";
+import { unlink } from "fs/promises";
+import { join } from "path";
 import { getAnimeAttributes } from "@/lib/queries";
 
 function slugify(str: string): string {
@@ -451,7 +453,7 @@ export async function rejectEntityAction(entityId: string) {
     .update(entities)
     .set({ status: "rejected" })
     .where(eq(entities.id, entityId))
-    .returning({ createdBy: entities.createdBy });
+    .returning({ createdBy: entities.createdBy, imageUrl: entities.imageUrl });
 
   if (entity?.createdBy) {
     await db.insert(notifications).values({
@@ -460,6 +462,12 @@ export async function rejectEntityAction(entityId: string) {
       referenceId:   entityId,
       referenceType: "entity",
     }).catch(() => {});
+  }
+
+  // Delete the uploaded image for user-submitted characters (identified by -reg-user suffix)
+  if (entity?.imageUrl?.startsWith("/uploads/") && entity.imageUrl.includes("-reg-user")) {
+    const filePath = join(process.cwd(), "public", entity.imageUrl);
+    await unlink(filePath).catch(() => {});
   }
 
   revalidatePath("/admin/submissions");

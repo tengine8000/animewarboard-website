@@ -11,6 +11,7 @@ import {
   getMatchupComments,
 } from "@/lib/queries";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { auth } from "@/auth";
 import { BattleVoteForm } from "@/components/battle-vote-form";
 import { BattleOverviewCard } from "@/components/battle-overview-card";
@@ -62,7 +63,7 @@ export default async function BattlePage({ params }: Props) {
   const [data, session] = await Promise.all([getMatchupBySlug(slug), auth()]);
   if (!data) notFound();
 
-  const { sideA, sideB, sideALabel, sideBLabel, voteSummary, matchup } = data;
+  const { sideA, sideB, sideALabel, sideBLabel, voteSummary, matchup, creatorUsername, creatorRole } = data;
   const labelA = deriveSideLabel(sideALabel, sideA);
   const labelB = deriveSideLabel(sideBLabel, sideB);
   const isLoggedIn = !!session?.user?.id;
@@ -97,6 +98,15 @@ export default async function BattlePage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+
+      {creatorRole === "user" && creatorUsername && (
+        <p className="text-xs" style={{ color: "var(--color-text-ghost)" }}>
+          Submitted by{" "}
+          <Link href={`/u/${creatorUsername}`} className="hover:underline" style={{ color: "var(--color-accent)" }}>
+            @{creatorUsername}
+          </Link>
+        </p>
+      )}
 
       {/* ── BATTLE OVERVIEW ───────────────────────────────────────────── */}
       <BattleOverviewCard

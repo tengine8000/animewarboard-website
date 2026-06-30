@@ -178,6 +178,7 @@ export const categories = pgTable("categories", {
   matchupLabel: text("matchup_label").notNull().default("Battle"),
   searchVec:    tsvector("search_vec"),
   createdAt:    timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  createdBy:    uuid("created_by").references(() => users.id),
 }, (t) => [
   index("categories_parent_idx").on(t.parentId),
   index("categories_search_vec_gin").using("gin", t.searchVec),

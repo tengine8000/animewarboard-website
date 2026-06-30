@@ -155,6 +155,7 @@ export default async function SubmitCharacterPage({ searchParams }: Props) {
           uploadType="characters"
           aspectRatio={1}
           label="Character Portrait (1:1)"
+          apiRoute="/api/upload"
         />
 
         {attrs.length > 0 && (

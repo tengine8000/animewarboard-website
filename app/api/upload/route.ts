@@ -4,7 +4,7 @@ import { join, extname } from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 
-const ALLOWED_TYPES = ["avatars"] as const;
+const ALLOWED_TYPES = ["avatars", "characters"] as const;
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -29,9 +29,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_type" }, { status: 400 });
   }
 
-  const ext  = extname(file.name) || ".jpg";
-  const name = `${randomUUID()}${ext}`;
-  const dir  = join(process.cwd(), "public", "uploads", type);
+  const ext    = extname(file.name) || ".jpg";
+  const suffix = type === "characters" ? "-reg-user" : "";
+  const name   = `${randomUUID()}${suffix}${ext}`;
+  const dir    = join(process.cwd(), "public", "uploads", type);
 
   await mkdir(dir, { recursive: true });
   await writeFile(join(dir, name), Buffer.from(await file.arrayBuffer()));

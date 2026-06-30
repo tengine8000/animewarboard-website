@@ -129,6 +129,14 @@ export default async function CharacterPage({ params }: Props) {
               {entity.series.name}
             </Link>
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight mt-1">{entity.name}</h1>
+            {entity.creatorRole === "user" && entity.creatorUsername && (
+              <p className="text-xs mt-1" style={{ color: "var(--color-text-ghost)" }}>
+                Submitted by{" "}
+                <Link href={`/u/${entity.creatorUsername}`} className="hover:underline" style={{ color: "var(--color-accent)" }}>
+                  @{entity.creatorUsername}
+                </Link>
+              </p>
+            )}
           </div>
 
           {entity.bio && (

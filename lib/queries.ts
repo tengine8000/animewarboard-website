@@ -272,14 +272,20 @@ async function _getAllMatchups(
 }
 
 export async function getMatchupBySlug(slug: string): Promise<
-  (MatchupCard & { matchup: typeof matchups.$inferSelect; voteSummary: VoteSummary }) | null
+  (MatchupCard & { matchup: typeof matchups.$inferSelect; voteSummary: VoteSummary; creatorUsername: string | null; creatorRole: string | null }) | null
 > {
-  const [matchup] = await db
-    .select()
+  const [row] = await db
+    .select({
+      matchup:         matchups,
+      creatorUsername: users.username,
+      creatorRole:     users.role,
+    })
     .from(matchups)
+    .leftJoin(users, eq(matchups.createdBy, users.id))
     .where(eq(matchups.slug, slug))
     .limit(1);
-  if (!matchup) return null;
+  if (!row) return null;
+  const { matchup, creatorUsername, creatorRole } = row;
 
   const [participants, voteCounts] = await Promise.all([
     fetchParticipants(matchup.id),
@@ -303,6 +309,7 @@ export async function getMatchupBySlug(slug: string): Promise<
     sideB: participants.filter((p) => p.side === "b"),
     votes: { total: a + b + d, aVotes: a, bVotes: b, drawVotes: d },
     voteSummary: computeVoteSummary(a, b, d),
+    creatorUsername, creatorRole,
   };
 }
 
@@ -362,8 +369,21 @@ export async function getEntitiesCount(opts: { categoryId?: string } = {}): Prom
 
 export async function getCategoryBySlug(slug: string) {
   const [cat] = await db
-    .select()
+    .select({
+      id:           categories.id,
+      parentId:     categories.parentId,
+      name:         categories.name,
+      slug:         categories.slug,
+      description:  categories.description,
+      coverImage:   categories.coverImage,
+      entityLabel:  categories.entityLabel,
+      matchupLabel: categories.matchupLabel,
+      createdAt:    categories.createdAt,
+      creatorUsername: users.username,
+      creatorRole:     users.role,
+    })
     .from(categories)
+    .leftJoin(users, eq(categories.createdBy, users.id))
     .where(eq(categories.slug, slug))
     .limit(1);
   return cat ?? null;
@@ -426,9 +446,12 @@ export async function getEntityBySlug(slug: string) {
         name: categories.name,
         slug: categories.slug,
       },
+      creatorUsername: users.username,
+      creatorRole:     users.role,
     })
     .from(entities)
     .innerJoin(categories, eq(entities.categoryId, categories.id))
+    .leftJoin(users, eq(entities.createdBy, users.id))
     .where(eq(entities.slug, slug))
     .limit(1);
 

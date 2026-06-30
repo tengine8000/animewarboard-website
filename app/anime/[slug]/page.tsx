@@ -41,6 +41,14 @@ export default async function SeriesPage({ params }: Props) {
         {series.description && (
           <p className="text-[var(--color-text-muted)] mt-1">{series.description}</p>
         )}
+        {series.creatorRole === "user" && series.creatorUsername && (
+          <p className="text-xs mt-1" style={{ color: "var(--color-text-ghost)" }}>
+            Submitted by{" "}
+            <Link href={`/u/${series.creatorUsername}`} className="hover:underline" style={{ color: "var(--color-accent)" }}>
+              @{series.creatorUsername}
+            </Link>
+          </p>
+        )}
       </div>
 
       {/* Characters */}
