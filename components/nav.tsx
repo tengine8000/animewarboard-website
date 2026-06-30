@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogOut } from "lucide-react";
+import { LogOut, Shield } from "lucide-react";
 import { LogoMark } from "./logo-mark";
 import { auth } from "@/auth";
 import { ThemeToggle } from "./theme-toggle";
@@ -12,6 +12,7 @@ import { signOutAction } from "@/app/actions/auth";
 export async function Nav() {
   const session = await auth();
   const user = session?.user;
+  const isAdmin = (user as any)?.role === "admin";
   const unreadCount = user?.id ? await getUnreadNotificationCount(user.id) : 0;
 
   return (
@@ -56,6 +57,16 @@ export async function Nav() {
           <ThemeToggle />
 
           {user && <NotificationBell initialCount={unreadCount} />}
+
+          {/* Admin link — desktop only */}
+          {isAdmin && (
+            <Link href="/admin"
+              className="hidden md:flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg"
+              style={{ background: "color-mix(in srgb, var(--color-accent) 15%, transparent)", color: "var(--color-accent)", border: "1px solid color-mix(in srgb, var(--color-accent) 30%, transparent)" }}
+              title="Admin panel">
+              <Shield size={12} /> Admin
+            </Link>
+          )}
 
           {/* Desktop auth — hidden on mobile (accessible via hamburger drawer) */}
           {user ? (
