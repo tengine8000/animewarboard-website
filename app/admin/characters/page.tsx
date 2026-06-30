@@ -7,9 +7,11 @@ import { ArrowLeft, Plus, Pencil } from "lucide-react";
 import { db } from "@/db";
 import { entities, categories } from "@/db/schema";
 import { eq, desc, ilike, and, asc, isNull } from "drizzle-orm";
-import { deleteCharacterAction } from "@/app/actions/admin-content";
+import { deleteCharacterAction, approveEntityAction, rejectEntityAction } from "@/app/actions/admin-content";
 import { AdminDeleteButton } from "@/components/admin-delete-button";
+import { AdminReviewButtons } from "@/components/admin-review-buttons";
 import { AdminSearchBar } from "@/components/admin-search-bar";
+import { users } from "@/db/schema";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Characters — Admin" };
@@ -49,16 +51,19 @@ export default async function AdminCharactersPage({
       : Promise.resolve([]),
     db
       .select({
-        id:        entities.id,
-        name:      entities.name,
-        slug:      entities.slug,
-        status:    entities.status,
-        imageUrl:  entities.imageUrl,
-        series:    categories.name,
-        createdAt: entities.createdAt,
+        id:                entities.id,
+        name:              entities.name,
+        slug:              entities.slug,
+        status:            entities.status,
+        imageUrl:          entities.imageUrl,
+        bio:               entities.bio,
+        series:            categories.name,
+        createdAt:         entities.createdAt,
+        submitterUsername: users.username,
       })
       .from(entities)
       .leftJoin(categories, eq(entities.categoryId, categories.id))
+      .leftJoin(users, eq(entities.createdBy, users.id))
       .where(and(
         q        ? ilike(entities.name, `%${q}%`)     : undefined,
         status   ? eq(entities.status, status as any) : undefined,
@@ -123,44 +128,100 @@ export default async function AdminCharactersPage({
           </p>
         ) : (
           <div className="divide-y" style={{ borderColor: "var(--color-border)" }}>
-            {rows.map((row) => (
-              <div key={row.id} className="flex items-center gap-3 px-4 py-3">
-                {/* Avatar */}
-                <div style={{
-                  width: 36, height: 36, borderRadius: "50%",
-                  background: "var(--color-surface-hover)",
-                  overflow: "hidden", flexShrink: 0,
-                }}>
-                  {row.imageUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={row.imageUrl} alt={row.name} className="w-full h-full object-cover object-top" />
+            {rows.map((row) =>
+              row.status === "pending" ? (
+                /* ── Expanded review card for pending submissions ── */
+                <div key={row.id} className="p-4 space-y-3" style={{ borderLeft: `3px solid ${STATUS_COLOR.pending}` }}>
+                  <div className="flex gap-4">
+                    {/* Image */}
+                    {row.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={row.imageUrl} alt={row.name}
+                        style={{ width: 80, height: 80, borderRadius: 10, objectFit: "cover", objectPosition: "top", flexShrink: 0 }}
+                      />
+                    ) : (
+                      <div style={{ width: 80, height: 80, borderRadius: 10, background: "var(--color-surface-hover)", flexShrink: 0 }} />
+                    )}
+
+                    {/* Details */}
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <p className="font-black text-base" style={{ color: "var(--color-text-base)" }}>{row.name}</p>
+                      <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+                        {row.series ?? "Unknown series"}
+                        {row.submitterUsername && (
+                          <> · submitted by <Link href={`/u/${row.submitterUsername}`} className="hover:underline" style={{ color: "var(--color-accent)" }}>@{row.submitterUsername}</Link></>
+                        )}
+                      </p>
+                      <span className="inline-block text-[10px] font-black tracking-widest uppercase px-2 py-0.5 rounded"
+                        style={{ background: `${STATUS_COLOR.pending}18`, color: STATUS_COLOR.pending }}>
+                        pending review
+                      </span>
+                    </div>
+                  </div>
+
+                  {row.bio && (
+                    <p className="text-sm leading-relaxed" style={{ color: "var(--color-text-muted)" }}>
+                      {row.bio}
+                    </p>
                   )}
-                </div>
 
-                {/* Name + series */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate" style={{ color: "var(--color-text-base)" }}>
-                    {row.name}
-                  </p>
-                  <p className="text-xs truncate" style={{ color: "var(--color-text-muted)" }}>
-                    {row.series ?? "—"} · <span style={{ color: STATUS_COLOR[row.status] }}>{row.status}</span>
-                  </p>
+                  <div className="flex items-center justify-between pt-1">
+                    <AdminReviewButtons
+                      approveAction={approveEntityAction.bind(null, row.id)}
+                      rejectAction={rejectEntityAction.bind(null, row.id)}
+                      label={row.name}
+                    />
+                    <div className="flex items-center gap-1">
+                      <Link
+                        href={`/admin/characters/${row.id}/edit`}
+                        className="flex items-center justify-center w-8 h-8 rounded-lg"
+                        style={{ color: "var(--color-text-muted)" }}
+                        title="Edit"
+                      >
+                        <Pencil size={14} />
+                      </Link>
+                      <AdminDeleteButton action={deleteCharacterAction.bind(null, row.id)} label={row.name} />
+                    </div>
+                  </div>
                 </div>
+              ) : (
+                /* ── Compact row for approved / rejected ── */
+                <div key={row.id} className="flex items-center gap-3 px-4 py-3">
+                  <div style={{
+                    width: 36, height: 36, borderRadius: "50%",
+                    background: "var(--color-surface-hover)",
+                    overflow: "hidden", flexShrink: 0,
+                  }}>
+                    {row.imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={row.imageUrl} alt={row.name} className="w-full h-full object-cover object-top" />
+                    )}
+                  </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-1 shrink-0">
-                  <Link
-                    href={`/admin/characters/${row.id}/edit`}
-                    className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
-                    style={{ color: "var(--color-text-muted)" }}
-                    title="Edit"
-                  >
-                    <Pencil size={14} />
-                  </Link>
-                  <AdminDeleteButton action={deleteCharacterAction.bind(null, row.id)} label={row.name} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold truncate" style={{ color: "var(--color-text-base)" }}>
+                      {row.name}
+                    </p>
+                    <p className="text-xs truncate" style={{ color: "var(--color-text-muted)" }}>
+                      {row.series ?? "—"} · <span style={{ color: STATUS_COLOR[row.status] }}>{row.status}</span>
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Link
+                      href={`/admin/characters/${row.id}/edit`}
+                      className="flex items-center justify-center w-8 h-8 rounded-lg transition-colors"
+                      style={{ color: "var(--color-text-muted)" }}
+                      title="Edit"
+                    >
+                      <Pencil size={14} />
+                    </Link>
+                    <AdminDeleteButton action={deleteCharacterAction.bind(null, row.id)} label={row.name} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         )}
       </div>

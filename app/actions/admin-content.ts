@@ -442,7 +442,7 @@ export async function approveEntityAction(entityId: string) {
     }).catch(() => {});
   }
 
-  revalidatePath("/admin/submissions");
+  revalidatePath("/admin/characters");
 }
 
 export async function rejectEntityAction(entityId: string) {
@@ -470,5 +470,5 @@ export async function rejectEntityAction(entityId: string) {
     await unlink(filePath).catch(() => {});
   }
 
-  revalidatePath("/admin/submissions");
+  revalidatePath("/admin/characters");
 }
