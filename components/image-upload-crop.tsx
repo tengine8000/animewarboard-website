@@ -7,10 +7,11 @@ import { Upload, X, Loader } from "lucide-react";
 
 type Props = {
   name: string;          // hidden input name that receives the uploaded URL
-  uploadType: string;    // "characters" | "series" — maps to /public/uploads/[type]/
+  uploadType: string;    // "characters" | "series" | "avatars" — maps to /public/uploads/[type]/
   aspectRatio?: number;  // default 1 (square for character portraits)
   label?: string;
   currentUrl?: string;   // pre-populate with existing image on edit forms
+  apiRoute?: string;     // default "/api/admin/upload"
 };
 
 function centerAspectCrop(mediaW: number, mediaH: number, aspect: number): Crop {
@@ -21,7 +22,7 @@ function centerAspectCrop(mediaW: number, mediaH: number, aspect: number): Crop 
   );
 }
 
-export function ImageUploadCrop({ name, uploadType, aspectRatio = 1, label = "Character Image", currentUrl }: Props) {
+export function ImageUploadCrop({ name, uploadType, aspectRatio = 1, label = "Character Image", currentUrl, apiRoute = "/api/admin/upload" }: Props) {
   const [src, setSrc]             = useState<string | null>(null);
   const [crop, setCrop]           = useState<Crop>();
   const [preview, setPreview]     = useState<string | null>(currentUrl ?? null);
@@ -82,7 +83,7 @@ export function ImageUploadCrop({ name, uploadType, aspectRatio = 1, label = "Ch
       fd.append("type", uploadType);
 
       try {
-        const res  = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        const res  = await fetch(apiRoute, { method: "POST", body: fd });
         const json = await res.json();
         if (!res.ok || json.error) throw new Error(json.error ?? "Upload failed");
         setUrl(json.url);

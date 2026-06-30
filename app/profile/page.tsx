@@ -11,6 +11,8 @@ import { getUserPointSummary } from "@/lib/points";
 import { RANK_COLORS, RANK_ICONS } from "@/lib/ranks";
 import { RankBadge } from "@/components/rank-badge";
 import { UsernameForm } from "@/components/username-form";
+import { ImageUploadCrop } from "@/components/image-upload-crop";
+import { updateAvatarAction } from "@/app/actions/update-avatar";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "My Profile" };
@@ -36,6 +38,7 @@ export default async function ProfilePage() {
     ? new Date(dbUser.createdAt).toLocaleDateString("en-US", { month: "long", year: "numeric" })
     : null;
 
+  const avatarUrl = dbUser?.image ?? session.user.image ?? null;
   const initial = ((session.user.name ?? session.user.email ?? "?")[0]).toUpperCase();
   const rankColor = RANK_COLORS[rank];
   const rankIcon  = RANK_ICONS[rank];
@@ -47,9 +50,9 @@ export default async function ProfilePage() {
       <div className="p-6 space-y-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
         <div className="flex items-start gap-5">
           <div className="shrink-0">
-            {session.user.image ? (
+            {avatarUrl ? (
               <Image
-                src={session.user.image} alt={session.user.name ?? ""}
+                src={avatarUrl} alt={session.user.name ?? ""}
                 width={64} height={64} className="w-16 h-16 rounded-xl object-cover"
               />
             ) : (
@@ -144,6 +147,30 @@ export default async function ProfilePage() {
             <p className="text-[10px] font-semibold uppercase tracking-widest mt-1" style={{ color: "var(--color-text-muted)" }}>{label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Avatar upload */}
+      <div className="p-5 space-y-3" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+        <p className="text-[10px] font-black tracking-widest uppercase" style={{ color: "var(--color-text-ghost)" }}>
+          Profile Photo
+        </p>
+        <form action={updateAvatarAction} className="space-y-3">
+          <ImageUploadCrop
+            name="imageUrl"
+            uploadType="avatars"
+            aspectRatio={1}
+            label="Upload a photo (1:1)"
+            currentUrl={avatarUrl ?? undefined}
+            apiRoute="/api/upload"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-lg text-sm font-black text-white"
+            style={{ background: "var(--color-accent)" }}
+          >
+            Save Photo
+          </button>
+        </form>
       </div>
 
       {/* Username */}
