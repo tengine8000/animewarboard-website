@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { Camera, Loader } from "lucide-react";
@@ -26,8 +27,9 @@ export function AvatarUploadModal({
   const [uploading, setUploading] = useState(false);
   const [error, setError]         = useState<string | null>(null);
   const [mounted, setMounted]     = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const imgRef  = useRef<HTMLImageElement>(null);
+  const fileRef  = useRef<HTMLInputElement>(null);
+  const imgRef   = useRef<HTMLImageElement>(null);
+  const router   = useRouter();
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -98,9 +100,12 @@ export function AvatarUploadModal({
         savefd.append("imageUrl", uploadedUrl);
         await updateAvatarAction(savefd);
 
+        // State first — image is visible immediately
         setAvatarUrl(uploadedUrl);
         setSrc(null);
         setCrop(undefined);
+        // Background refresh AFTER state commits so nav + session pick up new image
+        router.refresh();
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : "Upload failed");
       } finally {
