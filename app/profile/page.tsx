@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { votes, users, adminSettings } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import Link from "next/link";
-import Image from "next/image";
+
 import { Swords, Calendar, Shield, LogOut, Zap, Flame, Coins, Star } from "lucide-react";
 import type { Metadata } from "next";
 import { getUserPointSummary } from "@/lib/points";
@@ -51,9 +51,10 @@ export default async function ProfilePage() {
         <div className="flex items-start gap-5">
           <div className="shrink-0">
             {avatarUrl ? (
-              <Image
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
                 src={avatarUrl} alt={session.user.name ?? ""}
-                width={64} height={64} className="w-16 h-16 rounded-xl object-cover"
+                className="w-16 h-16 rounded-xl object-cover"
               />
             ) : (
               <div className="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-black"
