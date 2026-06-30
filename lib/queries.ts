@@ -882,6 +882,7 @@ async function _getTopUsers(limit: number): Promise<UserLeaderRow[]> {
         COALESCE(SUM(CASE WHEN pt.amount > 0 THEN pt.amount ELSE 0 END), 0) AS "lifetimeXp"
       FROM users u
       LEFT JOIN point_transactions pt ON pt.user_id = u.id
+      WHERE u.role NOT IN ('admin', 'moderator')
       GROUP BY u.id, u.name, u.image
       ORDER BY "lifetimeXp" DESC
       LIMIT ${limit}
