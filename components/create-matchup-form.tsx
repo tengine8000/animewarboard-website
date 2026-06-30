@@ -198,6 +198,10 @@ export function CreateMatchupForm() {
       });
       if (result.ok) {
         router.push(`/battles/${result.slug}`);
+      } else if ("required" in result) {
+        window.dispatchEvent(new CustomEvent("awb:rankgate", {
+          detail: { required: result.required, current: result.current, xpNeeded: result.xpNeeded },
+        }));
       } else {
         setError(result.error);
       }

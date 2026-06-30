@@ -6,6 +6,8 @@ import { db } from "@/db";
 import { matchups, matchupParticipants, entityVariants, entities, categories } from "@/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { getUserPointSummary } from "@/lib/points";
+import { CORPORAL_RANK_INDEX, type RankName } from "@/lib/ranks";
 
 type CreateMatchupPayload = {
   sideAVariantIds: string[];
@@ -16,6 +18,7 @@ type CreateMatchupPayload = {
 
 type CreateMatchupResult =
   | { ok: true;  slug: string }
+  | { ok: false; error: "rank_gate"; required: RankName; current: RankName; xpNeeded: number | null }
   | { ok: false; error: string };
 
 function computeCanonicalHash(sideA: string[], sideB: string[]): string {
@@ -42,6 +45,11 @@ async function uniqueSlug(base: string): Promise<string> {
 export async function createMatchupAction(payload: CreateMatchupPayload): Promise<CreateMatchupResult> {
   const session = await auth();
   if (!session?.user?.id) return { ok: false, error: "not_authenticated" };
+
+  const { rankIndex, rank, xpToNext } = await getUserPointSummary(session.user.id);
+  if (rankIndex < CORPORAL_RANK_INDEX) {
+    return { ok: false, error: "rank_gate", required: "Corporal", current: rank, xpNeeded: xpToNext };
+  }
 
   const { sideAVariantIds, sideBVariantIds, sideALabel, sideBLabel } = payload;
 

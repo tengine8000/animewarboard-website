@@ -1,6 +1,6 @@
 import { getAllMatchups, getPlatformStats } from "@/lib/queries";
 import { MatchupCard } from "@/components/matchup-card";
-import { Swords, Flame, Clock, TrendingUp } from "lucide-react";
+import { Swords, Flame, Clock, TrendingUp, Plus } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -83,7 +83,7 @@ export default async function BattlesPage({
         </div>
       </div>
 
-      {/* Sort tabs */}
+      {/* Sort tabs + create CTA */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-1 p-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl">
           {[
@@ -109,9 +109,18 @@ export default async function BattlesPage({
           })}
         </div>
 
-        <p className="text-xs" style={{ color: "var(--color-text-ghost)" }}>
-          {matchups.length} battle{matchups.length !== 1 ? "s" : ""}
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-xs" style={{ color: "var(--color-text-ghost)" }}>
+            {matchups.length} battle{matchups.length !== 1 ? "s" : ""}
+          </p>
+          <Link
+            href="/battles/create"
+            className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg"
+            style={{ background: "var(--color-accent)", color: "#fff" }}
+          >
+            <Plus size={12} /> Create Battle
+          </Link>
+        </div>
       </div>
 
       {/* Grid */}

@@ -4,6 +4,8 @@ import { adminSettings } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { CharacterCard } from "@/components/character-card";
 import { Pagination } from "@/components/pagination";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -35,11 +37,20 @@ export default async function CharactersPage({ searchParams }: Props) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-6">
-      <div>
-        <h1 className="text-3xl font-black tracking-tight">Characters</h1>
-        <p className="text-[var(--color-text-muted)] mt-1 text-sm">
-          {total > 0 ? `${total.toLocaleString()} characters` : "No characters yet"}
-        </p>
+      <div className="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-black tracking-tight">Characters</h1>
+          <p className="text-[var(--color-text-muted)] mt-1 text-sm">
+            {total > 0 ? `${total.toLocaleString()} characters` : "No characters yet"}
+          </p>
+        </div>
+        <Link
+          href="/characters/submit"
+          className="flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg shrink-0"
+          style={{ background: "var(--color-accent)", color: "#fff" }}
+        >
+          <Plus size={14} /> Submit a Character
+        </Link>
       </div>
 
       {chars.length === 0 ? (

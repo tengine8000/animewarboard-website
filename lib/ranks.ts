@@ -32,7 +32,8 @@ export const RANK_ICONS: Record<RankName, string> = {
   "Field Marshal": "⚔",
 };
 
-// Sergeant and above can submit community stat ratings
+export const CORPORAL_RANK_INDEX  = RANKS.findIndex((r) => r.name === "Corporal");
+// Sergeant and above can submit community stat ratings + characters
 export const SERGEANT_RANK_INDEX = RANKS.findIndex((r) => r.name === "Sergeant");
 
 export function getRankFromXp(
