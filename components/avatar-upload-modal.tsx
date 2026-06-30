@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { Camera, Loader } from "lucide-react";
@@ -24,8 +25,11 @@ export function AvatarUploadModal({
   const [crop, setCrop]           = useState<Crop>();
   const [uploading, setUploading] = useState(false);
   const [error, setError]         = useState<string | null>(null);
+  const [mounted, setMounted]     = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const imgRef  = useRef<HTMLImageElement>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   const openPicker = () => fileRef.current?.click();
 
@@ -156,8 +160,8 @@ export function AvatarUploadModal({
         onChange={onFileChange}
       />
 
-      {/* Crop modal */}
-      {src && (
+      {/* Crop modal — portalled to body to escape clip-path ancestor */}
+      {mounted && src && createPortal(
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)" }}
@@ -220,7 +224,8 @@ export function AvatarUploadModal({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
