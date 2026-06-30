@@ -4,7 +4,6 @@ import { db } from "@/db";
 import { votes, users, adminSettings } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import Link from "next/link";
-
 import { Swords, Calendar, Shield, LogOut, Zap, Flame, Coins, Star } from "lucide-react";
 import type { Metadata } from "next";
 import { getUserPointSummary } from "@/lib/points";
@@ -16,6 +15,18 @@ import { updateAvatarAction } from "@/app/actions/update-avatar";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "My Profile" };
+
+const CLIP = "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)";
+
+function ClipCard({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div style={{ clipPath: CLIP, background: "var(--color-border)", padding: "1px" }}>
+      <div style={{ clipPath: CLIP, background: "var(--color-surface)" }} className={className}>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -31,7 +42,6 @@ export default async function ProfilePage() {
   ]);
 
   const cooldownDays = cooldownRow[0]?.value ?? 30;
-
   const { balance, lifetimeXp, rank, nextRank, xpToNext, progressPercent } = pointSummary;
 
   const joinedAt = dbUser?.createdAt
@@ -39,7 +49,7 @@ export default async function ProfilePage() {
     : null;
 
   const avatarUrl = dbUser?.image ?? session.user.image ?? null;
-  const initial = ((session.user.name ?? session.user.email ?? "?")[0]).toUpperCase();
+  const initial   = ((session.user.name ?? session.user.email ?? "?")[0]).toUpperCase();
   const rankColor = RANK_COLORS[rank];
   const rankIcon  = RANK_ICONS[rank];
 
@@ -47,15 +57,12 @@ export default async function ProfilePage() {
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-4">
 
       {/* Profile header */}
-      <div className="p-6 space-y-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+      <ClipCard className="p-6 space-y-4">
         <div className="flex items-start gap-5">
           <div className="shrink-0">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={avatarUrl} alt={session.user.name ?? ""}
-                className="w-16 h-16 rounded-xl object-cover"
-              />
+              <img src={avatarUrl} alt={session.user.name ?? ""} className="w-16 h-16 rounded-xl object-cover" />
             ) : (
               <div className="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-black"
                 style={{ background: rankColor }}>
@@ -79,7 +86,6 @@ export default async function ProfilePage() {
                 </Link>
               )}
             </div>
-
             <div className="flex items-center gap-2 flex-wrap">
               <RankBadge rank={rank} size="sm" />
               {dbUser?.isPatron && (
@@ -97,10 +103,10 @@ export default async function ProfilePage() {
             </div>
           </div>
         </div>
-      </div>
+      </ClipCard>
 
       {/* Rank progress */}
-      <div className="p-6 space-y-4" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+      <ClipCard className="p-6 space-y-4">
         <div className="flex items-center justify-between">
           <p className="text-[10px] font-black tracking-widest uppercase" style={{ color: "var(--color-text-ghost)" }}>
             Rank Progress
@@ -110,8 +116,6 @@ export default async function ProfilePage() {
             {lifetimeXp.toLocaleString()} XP
           </div>
         </div>
-
-        {/* Big rank icon */}
         <div className="flex items-center gap-4">
           <div className="text-5xl select-none" style={{ filter: `drop-shadow(0 0 8px ${rankColor}99)` }}>
             {rankIcon}
@@ -133,25 +137,25 @@ export default async function ProfilePage() {
             )}
           </div>
         </div>
-      </div>
+      </ClipCard>
 
       {/* Stats grid */}
       <div className="grid grid-cols-3 gap-3">
         {[
           { icon: <Swords size={16} />, value: Number(voteCount).toLocaleString(), label: "Predictions", color: "var(--color-accent)" },
-          { icon: <Flame size={16} />,  value: (dbUser?.loginStreak ?? 0).toString(), label: "Day Streak", color: "#f59e0b" },
-          { icon: <Coins size={16} />,  value: balance.toLocaleString(),  label: "Points",     color: "#22c55e" },
+          { icon: <Flame size={16} />,  value: (dbUser?.loginStreak ?? 0).toString(), label: "Day Streak",  color: "#f59e0b" },
+          { icon: <Coins size={16} />,  value: balance.toLocaleString(),              label: "Points",      color: "#22c55e" },
         ].map(({ icon, value, label, color }) => (
-          <div key={label} className="p-4 text-center" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+          <ClipCard key={label} className="p-4 text-center">
             <div className="flex justify-center mb-1" style={{ color }}>{icon}</div>
             <p className="text-2xl font-black" style={{ color }}>{value}</p>
             <p className="text-[10px] font-semibold uppercase tracking-widest mt-1" style={{ color: "var(--color-text-muted)" }}>{label}</p>
-          </div>
+          </ClipCard>
         ))}
       </div>
 
       {/* Avatar upload */}
-      <div className="p-5 space-y-3" style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+      <ClipCard className="p-5 space-y-3">
         <p className="text-[10px] font-black tracking-widest uppercase" style={{ color: "var(--color-text-ghost)" }}>
           Profile Photo
         </p>
@@ -172,24 +176,24 @@ export default async function ProfilePage() {
             Save Photo
           </button>
         </form>
-      </div>
+      </ClipCard>
 
       {/* Username */}
-      <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+      <ClipCard>
         <UsernameForm
           current={dbUser?.username ?? ""}
           cooldownDays={cooldownDays}
           changedAt={dbUser?.usernameChangedAt ?? null}
         />
-      </div>
+      </ClipCard>
 
       {/* Quick links */}
-      <div style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+      <ClipCard>
         <Link href="/ranks"
           className="flex items-center gap-3 px-5 py-4 transition-colors"
           style={{ borderBottom: "1px solid var(--color-border)" }}>
           <Star size={16} style={{ color: "var(--color-text-muted)" }} />
-          <span className="text-sm font-semibold">Ranks & How to Earn XP</span>
+          <span className="text-sm font-semibold">Ranks &amp; How to Earn XP</span>
         </Link>
         <Link href="/battles"
           className="flex items-center gap-3 px-5 py-4 transition-colors"
@@ -203,21 +207,14 @@ export default async function ProfilePage() {
           <Shield size={16} style={{ color: "var(--color-text-muted)" }} />
           <span className="text-sm font-semibold">Browse Characters</span>
         </Link>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/" });
-          }}
-        >
-          <button
-            type="submit"
-            className="w-full flex items-center gap-3 px-5 py-4 text-left text-red-400"
-          >
+        <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>
+          <button type="submit" className="w-full flex items-center gap-3 px-5 py-4 text-left text-red-400">
             <LogOut size={16} />
             <span className="text-sm font-semibold">Sign Out</span>
           </button>
         </form>
-      </div>
+      </ClipCard>
+
     </div>
   );
 }
