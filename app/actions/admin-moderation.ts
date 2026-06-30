@@ -19,7 +19,7 @@ function requireRole(role: string | undefined, allowed: AdminOrMod[]): boolean {
 
 export async function setUserRoleAction(
   targetUserId: string,
-  role: "user" | "moderator" | "banned",
+  role: "user" | "moderator" | "admin" | "banned",
 ): Promise<void> {
   const session = await auth();
   if ((session?.user as any)?.role !== "admin") return;

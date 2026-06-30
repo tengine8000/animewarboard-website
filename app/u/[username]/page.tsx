@@ -2,7 +2,6 @@ import { db } from "@/db";
 import { users, votes } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { Calendar, Swords, Flame, Coins, Zap } from "lucide-react";
 import type { Metadata } from "next";
 import { getUserPointSummary } from "@/lib/points";
@@ -46,10 +45,8 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
         <div className="flex items-start gap-5">
           <div className="shrink-0">
             {dbUser.image ? (
-              <Image
-                src={dbUser.image} alt={displayName}
-                width={64} height={64} className="w-16 h-16 rounded-xl object-cover"
-              />
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={dbUser.image} alt={displayName} className="w-16 h-16 rounded-xl object-cover" />
             ) : (
               <div className="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-black"
                 style={{ background: rankColor }}>

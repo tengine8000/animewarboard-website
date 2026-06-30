@@ -137,20 +137,24 @@ export default async function AdminUsersPage({
               </summary>
 
               {/* Expanded moderation panel */}
-              {!isSelf && (
-                <div
-                  style={{
-                    padding: "16px",
-                    borderTop: "1px solid var(--color-border)",
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                    gap: "12px",
-                  }}
-                >
-                  {/* Role control */}
-                  <ActionCard title="Role" icon={<Shield size={12} />}>
+              <div
+                style={{
+                  padding: "16px",
+                  borderTop: "1px solid var(--color-border)",
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                  gap: "12px",
+                }}
+              >
+                {/* Role control — disabled for self to prevent lockout */}
+                <ActionCard title="Role" icon={<Shield size={12} />}>
+                  {isSelf ? (
+                    <p style={{ fontSize: "11px", color: "var(--color-text-ghost)", fontStyle: "italic" }}>
+                      Cannot change your own role
+                    </p>
+                  ) : (
                     <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                      {(["user", "moderator", "banned"] as const).map((r) => (
+                      {(["user", "moderator", "admin", "banned"] as const).map((r) => (
                         <form key={r} action={setUserRoleAction.bind(null, u.id, r)}>
                           <button
                             type="submit"
@@ -171,41 +175,41 @@ export default async function AdminUsersPage({
                         </form>
                       ))}
                     </div>
-                  </ActionCard>
+                  )}
+                </ActionCard>
 
-                  {/* Patron toggle */}
-                  <ActionCard title="Patron" icon={<Star size={12} />}>
-                    <form action={setPatronAction.bind(null, u.id, !u.isPatron)}>
-                      <button
-                        type="submit"
-                        style={{
-                          padding: "5px 12px",
-                          borderRadius: "6px",
-                          fontSize: "11px",
-                          fontWeight: 800,
-                          cursor: "pointer",
-                          border: "1px solid",
-                          borderColor: u.isPatron ? "#f59e0b40" : "var(--color-border)",
-                          color: u.isPatron ? "#f59e0b" : "var(--color-text-muted)",
-                          background: u.isPatron ? "#f59e0b18" : "transparent",
-                        }}
-                      >
-                        {u.isPatron ? "★ Patron — Remove" : "Grant Patron"}
-                      </button>
-                    </form>
-                  </ActionCard>
+                {/* Patron toggle */}
+                <ActionCard title="Patron" icon={<Star size={12} />}>
+                  <form action={setPatronAction.bind(null, u.id, !u.isPatron)}>
+                    <button
+                      type="submit"
+                      style={{
+                        padding: "5px 12px",
+                        borderRadius: "6px",
+                        fontSize: "11px",
+                        fontWeight: 800,
+                        cursor: "pointer",
+                        border: "1px solid",
+                        borderColor: u.isPatron ? "#f59e0b40" : "var(--color-border)",
+                        color: u.isPatron ? "#f59e0b" : "var(--color-text-muted)",
+                        background: u.isPatron ? "#f59e0b18" : "transparent",
+                      }}
+                    >
+                      {u.isPatron ? "★ Patron — Remove" : "Grant Patron"}
+                    </button>
+                  </form>
+                </ActionCard>
 
-                  {/* Posting restriction */}
-                  <ActionCard title="Restrict Posting Until" icon={<Clock size={12} />}>
-                    <RestrictForm userId={u.id} restrictedUntil={u.restrictedUntil} />
-                  </ActionCard>
+                {/* Posting restriction */}
+                <ActionCard title="Restrict Posting Until" icon={<Clock size={12} />}>
+                  <RestrictForm userId={u.id} restrictedUntil={u.restrictedUntil} />
+                </ActionCard>
 
-                  {/* Manual point adjustment */}
-                  <ActionCard title="Point Adjustment" icon={<ShieldCheck size={12} />}>
-                    <AdjustForm userId={u.id} />
-                  </ActionCard>
-                </div>
-              )}
+                {/* Manual point adjustment */}
+                <ActionCard title="Point Adjustment" icon={<ShieldCheck size={12} />}>
+                  <AdjustForm userId={u.id} />
+                </ActionCard>
+              </div>
             </details>
           );
         })}
@@ -226,12 +230,12 @@ function RestrictForm({ userId, restrictedUntil }: { userId: string; restrictedU
   }
   return (
     <>
-      <form action={action} style={{ display: "flex", gap: "6px" }}>
+      <form action={action} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
         <input
           type="datetime-local"
           name="until"
           defaultValue={restrictedUntil ? restrictedUntil.replace("Z", "") : ""}
-          style={{ flex: 1, padding: "5px 8px", borderRadius: "6px", border: "1px solid var(--color-border)", background: "var(--color-bg)", color: "var(--color-text-base)", fontSize: "11px" }}
+          style={{ width: "100%", padding: "5px 8px", borderRadius: "6px", border: "1px solid var(--color-border)", background: "var(--color-bg)", color: "var(--color-text-base)", fontSize: "11px", boxSizing: "border-box" }}
         />
         <button type="submit" style={{ padding: "5px 10px", borderRadius: "6px", background: "var(--color-accent)", color: "#fff", fontSize: "11px", fontWeight: 800, cursor: "pointer", border: "none" }}>
           Set

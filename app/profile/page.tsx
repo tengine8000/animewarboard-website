@@ -10,8 +10,7 @@ import { getUserPointSummary } from "@/lib/points";
 import { RANK_COLORS, RANK_ICONS } from "@/lib/ranks";
 import { RankBadge } from "@/components/rank-badge";
 import { UsernameForm } from "@/components/username-form";
-import { ImageUploadCrop } from "@/components/image-upload-crop";
-import { updateAvatarAction } from "@/app/actions/update-avatar";
+import { AvatarUploadModal } from "@/components/avatar-upload-modal";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "My Profile" };
@@ -59,17 +58,7 @@ export default async function ProfilePage() {
       {/* Profile header */}
       <ClipCard className="p-6 space-y-4">
         <div className="flex items-start gap-5">
-          <div className="shrink-0">
-            {avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={avatarUrl} alt={session.user.name ?? ""} className="w-16 h-16 rounded-xl object-cover" />
-            ) : (
-              <div className="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-black"
-                style={{ background: rankColor }}>
-                {initial}
-              </div>
-            )}
-          </div>
+          <AvatarUploadModal initialUrl={avatarUrl} initial={initial} rankColor={rankColor} />
 
           <div className="flex-1 min-w-0 space-y-2">
             <div>
@@ -153,30 +142,6 @@ export default async function ProfilePage() {
           </ClipCard>
         ))}
       </div>
-
-      {/* Avatar upload */}
-      <ClipCard className="p-5 space-y-3">
-        <p className="text-[10px] font-black tracking-widest uppercase" style={{ color: "var(--color-text-ghost)" }}>
-          Profile Photo
-        </p>
-        <form action={updateAvatarAction} className="space-y-3">
-          <ImageUploadCrop
-            name="imageUrl"
-            uploadType="avatars"
-            aspectRatio={1}
-            label="Upload a photo (1:1)"
-            currentUrl={avatarUrl ?? undefined}
-            apiRoute="/api/upload"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2 rounded-lg text-sm font-black text-white"
-            style={{ background: "var(--color-accent)" }}
-          >
-            Save Photo
-          </button>
-        </form>
-      </ClipCard>
 
       {/* Username */}
       <ClipCard>

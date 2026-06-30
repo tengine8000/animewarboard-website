@@ -76,7 +76,7 @@ export function Footer() {
               Legal
             </p>
             {LEGAL_LINKS.map((l) => (
-              <Link key={l.href} href={l.href}
+              <Link key={l.href} href={l.href} prefetch={false}
                 className="text-sm transition-colors hover:text-[var(--color-accent)]"
                 style={{ color: "var(--color-text-muted)" }}>
                 {l.label}
