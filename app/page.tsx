@@ -41,7 +41,7 @@ export default async function HomePage() {
             Browse Battles
           </Link>
           <Link
-            href="/register"
+            href="/login"
             className="inline-flex items-center gap-2 border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-base)] font-semibold px-7 py-3 rounded-xl transition-colors text-sm"
           >
             Join for Free

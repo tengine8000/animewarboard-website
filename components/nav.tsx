@@ -99,7 +99,7 @@ export async function Nav() {
                 className="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-base)] px-3 py-1.5 rounded-lg transition-colors">
                 Sign In
               </Link>
-              <Link href="/register"
+              <Link href="/login"
                 className="text-sm font-semibold bg-[var(--color-accent)] hover:bg-[var(--color-accent-hover)] text-white px-4 py-1.5 rounded-lg transition-colors">
                 Join
               </Link>
@@ -107,7 +107,7 @@ export async function Nav() {
           )}
 
           {/* Mobile hamburger */}
-          <MobileMenuButton user={user ? { name: user.name, email: user.email, image: user.image } : null} />
+          <MobileMenuButton user={user ? { name: user.name, email: user.email, image: user.image, role: (user as any).role } : null} />
         </div>
       </div>
     </header>

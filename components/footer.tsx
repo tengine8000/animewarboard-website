@@ -11,7 +11,7 @@ const NAV_LINKS = [
 
 const ACCOUNT_LINKS = [
   { label: "Sign In",   href: "/login" },
-  { label: "Register",  href: "/register" },
+  { label: "Join",      href: "/login" },
   { label: "Profile",   href: "/profile" },
 ];
 

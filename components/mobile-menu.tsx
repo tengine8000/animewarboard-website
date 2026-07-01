@@ -17,7 +17,7 @@ const NAV_LINKS = [
   { href: "/ranks",        label: "Ranks",        icon: "▪" },
 ];
 
-type User = { name?: string | null; email?: string | null; image?: string | null };
+type User = { name?: string | null; email?: string | null; image?: string | null; role?: string | null };
 
 export function MobileMenuButton({ user }: { user: User | null }) {
   const [open, setOpen] = useState(false);
@@ -201,6 +201,33 @@ export function MobileMenuButton({ user }: { user: User | null }) {
           })}
         </nav>
 
+        {/* Admin link */}
+        {(user?.role === "admin" || user?.role === "moderator") && (
+          <div style={{ padding: "0 8px 8px", borderBottom: "1px solid var(--color-border)" }}>
+            <p style={{
+              fontSize: "9px", fontWeight: 900, letterSpacing: "0.12em",
+              textTransform: "uppercase", padding: "12px 16px 6px",
+              color: "var(--color-text-ghost)",
+            }}>
+              Admin
+            </p>
+            <Link
+              href="/admin"
+              onClick={() => setOpen(false)}
+              style={{
+                display: "flex", alignItems: "center", gap: "12px",
+                padding: "11px 16px", borderRadius: "10px",
+                fontSize: "14px", fontWeight: 700,
+                color: "var(--color-accent)",
+                background: "color-mix(in srgb, var(--color-accent) 10%, transparent)",
+              }}
+            >
+              <span style={{ fontSize: "16px", width: "20px", textAlign: "center", flexShrink: 0 }}>⚙</span>
+              Admin Panel
+            </Link>
+          </div>
+        )}
+
         {/* Auth section */}
         <div style={{ padding: "12px 16px", borderTop: "1px solid var(--color-border)", flexShrink: 0 }}>
           {user ? (
@@ -265,7 +292,7 @@ export function MobileMenuButton({ user }: { user: User | null }) {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               <Link
-                href="/register"
+                href="/login"
                 onClick={() => setOpen(false)}
                 style={{
                   display: "block",
