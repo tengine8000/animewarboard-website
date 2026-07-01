@@ -91,13 +91,13 @@ function TeamCarousel({
 
         <div style={{ position: "relative", width: CONT_W, height: CARD_H, overflow: "hidden" }}>
           {([
-            activeIndex > 0         ? participants[activeIndex - 1] : null,
-            participants[activeIndex],
-            activeIndex < count - 1 ? participants[activeIndex + 1] : null,
-          ] as (ShareParticipant | null)[]).map((p, slot) => {
+            [activeIndex > 0         ? participants[activeIndex - 1] : null, activeIndex - 1],
+            [participants[activeIndex],                                        activeIndex    ],
+            [activeIndex < count - 1 ? participants[activeIndex + 1] : null, activeIndex + 1],
+          ] as [ShareParticipant | null, number][]).map(([p, pIdx]) => {
             if (!p) return null;
-            const isActive = slot === 1;
-            const isLeft   = slot === 0;
+            const isActive = pIdx === activeIndex;
+            const isLeft   = pIdx === activeIndex - 1;
             const imgSrc = p.imageUrl ?? null;
             const transform = isActive
               ? `translateX(${PEEK_W}px)`
@@ -106,7 +106,7 @@ function TeamCarousel({
               : "translateX(100px) translateY(2px) translateZ(20px) perspective(410px) rotateY(316deg) scale(0.80)";
             return (
               <div
-                key={`${p.name}-${slot}`}
+                key={pIdx}
                 style={{
                   position: "absolute", left: 0, top: 0,
                   width: CARD_W, height: CARD_H,
