@@ -9,7 +9,7 @@ import { db } from "@/db";
 import { users, votes } from "@/db/schema";
 import { eq, count } from "drizzle-orm";
 import { getUserPointSummary } from "@/lib/points";
-import { RANK_COLORS, RANK_ICONS } from "@/lib/ranks";
+import { RANK_COLORS } from "@/lib/ranks";
 
 const BG      = "#0b0d18";
 const SURFACE = "#161926";
@@ -44,7 +44,6 @@ export default async function Image({ params }: { params: Promise<{ username: st
 
   const { balance, lifetimeXp, rank, nextRank, progressPercent } = pointSummary;
   const rankColor = RANK_COLORS[rank];
-  const rankIcon  = RANK_ICONS[rank];
   const displayName = dbUser.name ?? username;
   const initial     = displayName[0].toUpperCase();
   const streak      = dbUser.loginStreak ?? 0;
@@ -87,16 +86,13 @@ export default async function Image({ params }: { params: Promise<{ username: st
             <span style={{ color: rankColor, fontSize: 80, fontWeight: 900 }}>{initial}</span>
           </div>
 
-          {/* Rank icon + name */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 40, filter: `drop-shadow(0 0 10px ${rankColor}99)` }}>{rankIcon}</span>
-            <span style={{
-              fontSize: 11, fontWeight: 900, letterSpacing: "0.18em", textTransform: "uppercase",
-              color: rankColor,
-            }}>
-              {rank}
-            </span>
-          </div>
+          {/* Rank name */}
+          <span style={{
+            fontSize: 11, fontWeight: 900, letterSpacing: "0.18em", textTransform: "uppercase",
+            color: rankColor,
+          }}>
+            {rank}
+          </span>
         </div>
 
         {/* Right — details */}

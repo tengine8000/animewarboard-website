@@ -152,7 +152,7 @@ export default async function Image({ params }: { params: Promise<{ slug: string
                 textAlign: "center" as const,
               }}
             >
-              {total.toLocaleString()}{"\n"}votes
+              {`${total.toLocaleString()} VOTES`}
             </div>
           )}
         </div>
