@@ -64,8 +64,6 @@ function TeamCarousel({
     </button>
   );
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
 
@@ -100,9 +98,7 @@ function TeamCarousel({
             if (!p) return null;
             const isActive = slot === 1;
             const isLeft   = slot === 0;
-            const imgSrc   = p.imageUrl
-              ? p.imageUrl.startsWith("http") ? p.imageUrl : `${origin}${p.imageUrl}`
-              : null;
+            const imgSrc = p.imageUrl ?? null;
             const transform = isActive
               ? `translateX(${PEEK_W}px)`
               : isLeft
