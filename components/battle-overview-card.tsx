@@ -11,14 +11,20 @@ const CLIP           = "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% cal
 const NAV_H          = 56;
 const COLLAPSE_RANGE = 120;
 
-// Card carousel dimensions
-const CARD_W  = 88;   // active card
+// Desktop carousel dimensions
+const CARD_W  = 88;
 const CARD_H  = 116;
-const SIDE_W  = 76;   // side (inactive) card — slightly narrower
-const SIDE_H  = 104;  // side card — slightly shorter
-const SIDE_TOP = 6;   // side cards pushed down to show depth
-const PEEK_W  = 44;   // how much of each side card peeks out from behind the active card
-const CONT_W  = PEEK_W + CARD_W + PEEK_W; // 176 — total carousel container width
+const SIDE_W  = 76;
+const SIDE_H  = 104;
+const SIDE_TOP = 6;
+const PEEK_W  = 44;
+const CONT_W  = PEEK_W + CARD_W + PEEK_W; // 176
+
+// Mobile (< 640px) — nav buttons move inside the card deck, tighter peek
+const M_CARD_W = 84;
+const M_CARD_H = 114;
+const M_PEEK_W = 18;
+const M_CONT_W = M_PEEK_W + M_CARD_W + M_PEEK_W; // 120
 
 const DIFFICULTY_LABEL: Record<string, string> = {
   very_easy: "No Contest",
@@ -69,7 +75,7 @@ export type BattleOverviewCardProps = {
 // ── Team Carousel ──────────────────────────────────────────────────────────────
 
 function TeamCarousel({
-  participants, side, activeIndex, onPrev, onNext, outcome, difficulty,
+  participants, side, activeIndex, onPrev, onNext, outcome, compact = false,
 }: {
   participants: Participant[];
   side:         "a" | "b";
@@ -77,22 +83,29 @@ function TeamCarousel({
   onPrev:       () => void;
   onNext:       () => void;
   outcome?:     "wins" | "loses" | "draw" | null;
-  difficulty?:  string | null;
+  compact?:     boolean;
 }) {
   const color = side === "a" ? "var(--color-side-a)" : "var(--color-side-b)";
   const glow  = side === "a"
     ? "0 0 0 2px rgba(248,113,113,0.65), 0 0 22px rgba(248,113,113,0.4)"
     : "0 0 0 2px rgba(96,165,250,0.65),  0 0 22px rgba(96,165,250,0.4)";
 
+  // Responsive dimensions
+  const cW = compact ? M_CARD_W : CARD_W;
+  const cH = compact ? M_CARD_H : CARD_H;
+  const pW = compact ? M_PEEK_W : PEEK_W;
+  const cT = compact ? M_CONT_W : CONT_W;
+
   const count  = participants.length;
   const active = participants[activeIndex];
-  if (!active) return <div style={{ width: CONT_W }} />;
+  if (!active) return <div style={{ width: cT }} />;
 
   const outcomeColor = outcome === "wins" ? "#4ade80" : outcome === "loses" ? "#f87171" : "var(--color-text-ghost)";
   const outcomeLabel = outcome === "wins" ? "WINS" : outcome === "loses" ? "LOSES" : outcome === "draw" ? "DRAW" : null;
-  const diffLabel    = difficulty ? (DIFFICULTY_LABEL[difficulty] ?? difficulty) : null;
 
-  const navBtn = (onClick: () => void, label: string) => count <= 1 ? null : (
+  // Desktop: external buttons flanking the card deck
+  // Mobile (compact): buttons overlaid inside the card deck to save horizontal space
+  const externalNavBtn = (onClick: () => void, label: string) => (compact || count <= 1) ? null : (
     <button onClick={onClick} style={{
       flexShrink: 0,
       width: 26, height: 26,
@@ -101,9 +114,7 @@ function TeamCarousel({
       backdropFilter: "blur(6px)",
       border: `1.5px solid ${color}`,
       boxShadow: `0 0 6px ${color}60`,
-      outline: "none",
-      cursor: "pointer",
-      color: "#fff",
+      outline: "none", cursor: "pointer", color: "#fff",
       fontSize: 16, fontWeight: 900, lineHeight: 1,
       display: "flex", alignItems: "center", justifyContent: "center",
       padding: 0,
@@ -117,8 +128,8 @@ function TeamCarousel({
 
       {/* Team label + count badge */}
       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-        <Users size={12} style={{ color, flexShrink: 0 }} />
-        <span style={{ fontSize: 9, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color }}>
+        <Users size={compact ? 10 : 12} style={{ color, flexShrink: 0 }} />
+        <span style={{ fontSize: compact ? 8 : 9, fontWeight: 900, letterSpacing: "0.12em", textTransform: "uppercase", color }}>
           TEAM {side.toUpperCase()}
         </span>
         <span style={{
@@ -133,60 +144,87 @@ function TeamCarousel({
         </span>
       </div>
 
-      {/* Carousel: ‹ [stacked cards] › */}
+      {/* Carousel row */}
       <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-        {navBtn(onPrev, "‹")}
+        {externalNavBtn(onPrev, "‹")}
 
-        {/* Stacked card deck — keyed by participant index so same DOM element
-            follows the same participant across navigation (enables CSS transition) */}
-        <div style={{ position: "relative", width: CONT_W, height: CARD_H, overflow: "hidden" }}>
-          {([
-            [activeIndex > 0         ? participants[activeIndex - 1] : null, activeIndex - 1],
-            [participants[activeIndex],                                        activeIndex    ],
-            [activeIndex < count - 1 ? participants[activeIndex + 1] : null, activeIndex + 1],
-          ] as [typeof participants[0] | null, number][]).map(([p, pIdx]) => {
-            if (!p) return null;
-            const isActive = pIdx === activeIndex;
-            const isLeft   = pIdx === activeIndex - 1;
-            const img = p.variant.imageUrl ?? p.entity.imageUrl;
-            const transform = isActive
-              ? `translateX(${PEEK_W}px)`
-              : isLeft
-              ? "translateX(-16px) translateY(2px) translateZ(-20px) perspective(400px) rotateY(60deg) scale(0.80)"
-              : "translateX(100px) translateY(2px) translateZ(20px) perspective(410px) rotateY(316deg) scale(0.80)";
-            return (
-              <div
-                key={pIdx}
-                style={{
-                  position: "absolute", left: 0, top: 0,
-                  width: CARD_W, height: CARD_H,
-                  zIndex: isActive ? 2 : 1,
-                  opacity: isActive ? 1 : 0.4,
-                  transform,
-                  transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease",
-                  borderRadius: isActive ? 10 : 8, overflow: "hidden",
-                  border: `1.5px solid ${color}`,
-                  boxShadow: isActive ? glow : "none",
-                  background: "var(--color-surface-hover)",
-                }}
-              >
-                {img
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={img} alt={p.entity.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} />
-                  : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: isActive ? 30 : 24, fontWeight: 900, color, background: `color-mix(in srgb, ${color} 15%, transparent)` }}>{p.entity.name[0]}</div>
-                }
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent, rgba(0,0,0,0.88) 55%)", padding: isActive ? "22px 5px 6px" : "16px 4px 4px" }}>
-                  {isActive
-                    ? <Link href={`/characters/${p.entity.slug}`} style={{ fontSize: 9, fontWeight: 900, lineHeight: 1.2, color, display: "block", textAlign: "center", wordBreak: "break-word", textShadow: "0 1px 4px rgba(0,0,0,0.95)" }}>{p.entity.name}</Link>
-                    : <p style={{ fontSize: 7, fontWeight: 900, color: "rgba(255,255,255,0.38)", textAlign: "center", lineHeight: 1.2, wordBreak: "break-word", textShadow: "0 1px 3px rgba(0,0,0,1)" }}>{p.entity.name}</p>
+        {/* Stacked card deck — outer wrapper has no overflow clip so compact buttons
+            can protrude past the edge; inner div clips the cards */}
+        <div style={{ position: "relative", width: cT, height: cH }}>
+          <div style={{ position: "absolute", inset: 0, overflow: "hidden" }}>
+            {([
+              [activeIndex > 0         ? participants[activeIndex - 1] : null, activeIndex - 1],
+              [participants[activeIndex],                                        activeIndex    ],
+              [activeIndex < count - 1 ? participants[activeIndex + 1] : null, activeIndex + 1],
+            ] as [typeof participants[0] | null, number][]).map(([p, pIdx]) => {
+              if (!p) return null;
+              const isActive = pIdx === activeIndex;
+              const isLeft   = pIdx === activeIndex - 1;
+              const img = p.variant.imageUrl ?? p.entity.imageUrl;
+              const transform = isActive
+                ? `translateX(${pW}px)`
+                : isLeft
+                ? `translateX(${compact ? -26 : -16}px) translateY(2px) translateZ(-20px) perspective(400px) rotateY(60deg) scale(0.80)`
+                : `translateX(${compact ? 68 : 100}px) translateY(2px) translateZ(20px) perspective(410px) rotateY(316deg) scale(0.80)`;
+              return (
+                <div
+                  key={pIdx}
+                  style={{
+                    position: "absolute", left: 0, top: 0,
+                    width: cW, height: cH,
+                    zIndex: isActive ? 2 : 1,
+                    opacity: isActive ? 1 : 0.4,
+                    transform,
+                    transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s ease",
+                    borderRadius: isActive ? 10 : 8, overflow: "hidden",
+                    border: `1.5px solid ${color}`,
+                    boxShadow: isActive ? glow : "none",
+                    background: "var(--color-surface-hover)",
+                  }}
+                >
+                  {img
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={img} alt={p.entity.name} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top", display: "block" }} />
+                    : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: isActive ? (compact ? 24 : 30) : (compact ? 18 : 24), fontWeight: 900, color, background: `color-mix(in srgb, ${color} 15%, transparent)` }}>{p.entity.name[0]}</div>
                   }
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent, rgba(0,0,0,0.88) 55%)", padding: isActive ? "22px 5px 6px" : "16px 4px 4px" }}>
+                    {isActive
+                      ? <Link href={`/characters/${p.entity.slug}`} style={{ fontSize: compact ? 8 : 9, fontWeight: 900, lineHeight: 1.2, color, display: "block", textAlign: "center", wordBreak: "break-word", textShadow: "0 1px 4px rgba(0,0,0,0.95)" }}>{p.entity.name}</Link>
+                      : <p style={{ fontSize: 7, fontWeight: 900, color: "rgba(255,255,255,0.38)", textAlign: "center", lineHeight: 1.2, wordBreak: "break-word", textShadow: "0 1px 3px rgba(0,0,0,1)" }}>{p.entity.name}</p>
+                    }
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+
+          {/* Compact overlay buttons — live outside the overflow:hidden inner div
+              so they're not clipped, and sit at the outer edges of the deck */}
+          {compact && count > 1 && (
+            <>
+              <button onClick={onPrev} style={{
+                position: "absolute", left: -12, top: "50%", transform: "translateY(-50%)",
+                zIndex: 10, width: 22, height: 22, borderRadius: "50%",
+                background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)",
+                border: `1.5px solid ${color}`, boxShadow: `0 0 6px ${color}60`,
+                outline: "none", cursor: "pointer", color: "#fff",
+                fontSize: 14, fontWeight: 900, lineHeight: 1,
+                display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+              }}>‹</button>
+              <button onClick={onNext} style={{
+                position: "absolute", right: -12, top: "50%", transform: "translateY(-50%)",
+                zIndex: 10, width: 22, height: 22, borderRadius: "50%",
+                background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)",
+                border: `1.5px solid ${color}`, boxShadow: `0 0 6px ${color}60`,
+                outline: "none", cursor: "pointer", color: "#fff",
+                fontSize: 14, fontWeight: 900, lineHeight: 1,
+                display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+              }}>›</button>
+            </>
+          )}
         </div>
 
-        {navBtn(onNext, "›")}
+        {externalNavBtn(onNext, "›")}
       </div>
 
       {/* Dot pagination */}
@@ -207,9 +245,9 @@ function TeamCarousel({
         </div>
       )}
 
-      {/* WINS / LOSES + difficulty badges */}
+      {/* WINS / LOSES badge */}
       {outcomeLabel && (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, marginTop: 2 }}>
+        <div style={{ marginTop: 2 }}>
           <div style={{
             fontSize: 9, fontWeight: 900, letterSpacing: "0.12em",
             padding: "2px 8px",
@@ -219,17 +257,6 @@ function TeamCarousel({
           }}>
             {outcomeLabel}
           </div>
-          {diffLabel && (
-            <div style={{
-              fontSize: 8, fontWeight: 900, letterSpacing: "0.1em",
-              padding: "1px 6px",
-              border: `1px solid ${outcomeColor}`,
-              color: outcomeColor,
-              background: `color-mix(in srgb, ${outcomeColor} 8%, transparent)`,
-            }}>
-              {diffLabel}
-            </div>
-          )}
         </div>
       )}
     </div>
@@ -244,6 +271,7 @@ export function BattleOverviewCard({
 }: BattleOverviewCardProps) {
   const [indexA, setIndexA] = useState(0);
   const [indexB, setIndexB] = useState(0);
+  const [compact, setCompact] = useState(false);
 
   const outcomeA = userVerdict === "a" ? "wins" : userVerdict === "b" ? "loses" : userVerdict === "draw" ? "draw" : null;
   const outcomeB = userVerdict === "b" ? "wins" : userVerdict === "a" ? "loses" : userVerdict === "draw" ? "draw" : null;
@@ -302,6 +330,13 @@ export function BattleOverviewCard({
     };
   }, []);
 
+  useEffect(() => {
+    const check = () => setCompact(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check, { passive: true });
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   return (
     <>
       <div ref={spacerRef} style={{ height: "500px" }} />
@@ -335,56 +370,75 @@ export function BattleOverviewCard({
               </div>
 
               {/* Team A | VS | Team B */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 12px 10px", gap: 4 }}>
-                <TeamCarousel
-                  participants={sideA}
-                  side="a"
-                  activeIndex={indexA}
-                  onPrev={() => setIndexA((i) => (i - 1 + sideA.length) % sideA.length)}
-                  onNext={() => setIndexA((i) => (i + 1) % sideA.length)}
-                  outcome={outcomeA as "wins" | "loses" | "draw" | null}
-                  difficulty={userDifficulty}
-                />
-
-                {/* VS */}
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 <div style={{
-                  position: "relative", flexShrink: 0, userSelect: "none",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  width: 56, height: 72,
+                  display: "flex", alignItems: "center",
+                  justifyContent: compact ? "center" : "space-between",
+                  padding: compact ? "12px 8px 8px" : "14px 12px 8px",
+                  gap: compact ? 26 : 4,
                 }}>
-                  {/* Lightning bolt — large, behind the VS text */}
-                  <span style={{
-                    position: "absolute", inset: 0,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 80, lineHeight: 1,
-                    background: "linear-gradient(160deg, var(--color-side-a) 20%, var(--color-side-b) 80%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    opacity: 0.9,
-                    zIndex: 0,
-                    filter: "drop-shadow(0 0 10px rgba(248,113,113,0.75)) drop-shadow(0 0 20px rgba(96,165,250,0.55))",
-                  }}>⚡</span>
-                  {/* VS — italic, V taller than S, stronger glow since it's in front */}
+                  <TeamCarousel
+                    participants={sideA}
+                    side="a"
+                    activeIndex={indexA}
+                    onPrev={() => setIndexA((i) => (i - 1 + sideA.length) % sideA.length)}
+                    onNext={() => setIndexA((i) => (i + 1) % sideA.length)}
+                    outcome={outcomeA as "wins" | "loses" | "draw" | null}
+                    compact={compact}
+                  />
+
+                  {/* VS */}
                   <div style={{
-                    position: "relative", zIndex: 1,
-                    display: "flex", alignItems: "flex-end",
-                    fontStyle: "italic", fontWeight: 900,
-                    lineHeight: 1,
+                    position: "relative", flexShrink: 0, userSelect: "none",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    width: compact ? 44 : 56, height: compact ? 58 : 72,
                   }}>
-                    <span style={{ fontSize: 36, color: "#fff", textShadow: "0 0 10px rgba(255,255,255,0.57), 0 0 20px rgba(255,255,255,0.42), 0 0 30px rgba(255,255,255,0.24), 0 2px 8px rgba(0,0,0,0.9)" }}>V</span>
-                    <span style={{ position: "relative", top: 10, right: 10, fontSize: 36, color: "#fff", textShadow: "0 0 10px rgba(255,255,255,0.57), 0 0 20px rgba(255,255,255,0.42), 0 0 30px rgba(255,255,255,0.24), 0 2px 8px rgba(0,0,0,0.9)", marginBottom: 1 }}>S</span>
+                    <span style={{
+                      position: "absolute", inset: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: compact ? 62 : 80, lineHeight: 1,
+                      background: "linear-gradient(160deg, var(--color-side-a) 20%, var(--color-side-b) 80%)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      opacity: 0.9, zIndex: 0,
+                      filter: "drop-shadow(0 0 10px rgba(248,113,113,0.75)) drop-shadow(0 0 20px rgba(96,165,250,0.55))",
+                    }}>⚡</span>
+                    <div style={{
+                      position: "relative", zIndex: 1,
+                      display: "flex", alignItems: "flex-end",
+                      fontStyle: "italic", fontWeight: 900, lineHeight: 1,
+                    }}>
+                      <span style={{ fontSize: compact ? 28 : 36, color: "#fff", textShadow: "0 0 10px rgba(255,255,255,0.57), 0 0 20px rgba(255,255,255,0.42), 0 0 30px rgba(255,255,255,0.24), 0 2px 8px rgba(0,0,0,0.9)" }}>V</span>
+                      <span style={{ position: "relative", top: compact ? 8 : 10, right: compact ? 8 : 10, fontSize: compact ? 28 : 36, color: "#fff", textShadow: "0 0 10px rgba(255,255,255,0.57), 0 0 20px rgba(255,255,255,0.42), 0 0 30px rgba(255,255,255,0.24), 0 2px 8px rgba(0,0,0,0.9)", marginBottom: 1 }}>S</span>
+                    </div>
                   </div>
+
+                  <TeamCarousel
+                    participants={sideB}
+                    side="b"
+                    activeIndex={indexB}
+                    onPrev={() => setIndexB((i) => (i - 1 + sideB.length) % sideB.length)}
+                    onNext={() => setIndexB((i) => (i + 1) % sideB.length)}
+                    outcome={outcomeB as "wins" | "loses" | "draw" | null}
+                    compact={compact}
+                  />
                 </div>
 
-                <TeamCarousel
-                  participants={sideB}
-                  side="b"
-                  activeIndex={indexB}
-                  onPrev={() => setIndexB((i) => (i - 1 + sideB.length) % sideB.length)}
-                  onNext={() => setIndexB((i) => (i + 1) % sideB.length)}
-                  outcome={outcomeB as "wins" | "loses" | "draw" | null}
-                  difficulty={userDifficulty}
-                />
+                {/* Difficulty — once, centered below VS */}
+                {userDifficulty && (
+                  <div style={{ display: "flex", justifyContent: "center", paddingBottom: 8 }}>
+                    <div style={{
+                      fontSize: 9, fontWeight: 900, letterSpacing: "0.12em",
+                      padding: "2px 10px",
+                      border: "1px solid #f59e0b",
+                      color: "#f59e0b",
+                      background: "rgba(245,158,11,0.08)",
+                      borderRadius: 3,
+                    }}>
+                      {DIFFICULTY_LABEL[userDifficulty] ?? userDifficulty}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Radar + Legend */}
