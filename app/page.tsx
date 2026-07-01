@@ -3,9 +3,11 @@ import { Swords, TrendingUp, Users, Zap, Flame } from "lucide-react";
 import { getPlatformStats, getTrendingMatchups, getRecentEntities, getHomepageContestedMatchups } from "@/lib/queries";
 import { MatchupCard } from "@/components/matchup-card";
 import { CharacterCard } from "@/components/character-card";
+import { auth } from "@/auth";
 
 export default async function HomePage() {
-  const [stats, trending, recent, contested] = await Promise.all([
+  const [session, stats, trending, recent, contested] = await Promise.all([
+    auth(),
     getPlatformStats(),
     getTrendingMatchups(6),
     getRecentEntities(12),
@@ -40,12 +42,14 @@ export default async function HomePage() {
             <Swords size={15} />
             Browse Battles
           </Link>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-base)] font-semibold px-7 py-3 rounded-xl transition-colors text-sm"
-          >
-            Join for Free
-          </Link>
+          {!session && (
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 border border-[var(--color-border)] hover:border-[var(--color-accent)] text-[var(--color-text-base)] font-semibold px-7 py-3 rounded-xl transition-colors text-sm"
+            >
+              Join for Free
+            </Link>
+          )}
         </div>
 
         {/* Stats row */}
