@@ -148,7 +148,7 @@ function CommentCard({
   }
 
   const initial = comment.user.name?.[0]?.toUpperCase() ?? "?";
-  const registerPath = type === "matchup" ? `/register?returnTo=/battles/${targetSlug}` : `/register?returnTo=/characters/${targetSlug}`;
+  const registerPath = type === "matchup" ? `/login?returnTo=/battles/${targetSlug}` : `/login?returnTo=/characters/${targetSlug}`;
 
   if (deleted) return null;
 
@@ -226,8 +226,8 @@ export function CommentSection({ type, targetId, targetSlug, isLoggedIn, isMod, 
   }
 
   const registerPath = type === "matchup"
-    ? `/register?returnTo=/battles/${targetSlug}`
-    : `/register?returnTo=/characters/${targetSlug}`;
+    ? `/login?returnTo=/battles/${targetSlug}`
+    : `/login?returnTo=/characters/${targetSlug}`;
 
   return (
     <div>

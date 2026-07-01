@@ -406,7 +406,7 @@ export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA,
 
           {!isLoggedIn && (
             <p className="text-center text-[10px] pt-3" style={{ color: "var(--color-text-ghost)" }}>
-              <Link href="/register" style={{ color: "var(--color-accent)" }} className="hover:underline">Sign in</Link>{" "}
+              <Link href="/login" style={{ color: "var(--color-accent)" }} className="hover:underline">Sign in</Link>{" "}
               to submit slider ratings
             </p>
           )}
@@ -431,7 +431,7 @@ export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA,
               — has been saved. Register to submit it officially.
             </p>
             <div className="flex gap-2 justify-center">
-              <Link href={`/register?returnTo=/battles/${matchupSlug}`}
+              <Link href={`/login?returnTo=/battles/${matchupSlug}`}
                 className="inline-flex items-center gap-2 font-black px-5 py-2.5 text-sm"
                 style={{ background: "var(--color-accent)", color: "#fff" }}>
                 <Swords size={13} /> Join Free

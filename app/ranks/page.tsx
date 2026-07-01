@@ -122,7 +122,7 @@ export default async function RanksPage() {
       {!session && (
         <ClipCard>
           <div className="px-5 py-4 text-sm text-center">
-            <Link href="/register" className="font-semibold hover:underline" style={{ color: "var(--color-accent)" }}>
+            <Link href="/login" className="font-semibold hover:underline" style={{ color: "var(--color-accent)" }}>
               Join AnimeWarBoard
             </Link>{" "}
             <span style={{ color: "var(--color-text-muted)" }}>to start earning XP and climbing the ranks.</span>

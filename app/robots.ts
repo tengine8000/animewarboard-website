@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/api/", "/login", "/register", "/profile"],
+        disallow: ["/admin", "/api/", "/login", "/profile"],
       },
     ],
     sitemap: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://animewarboard.com"}/sitemap.xml`,
