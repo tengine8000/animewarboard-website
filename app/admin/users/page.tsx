@@ -10,7 +10,9 @@ import {
   setPatronAction,
   setPostingRestrictionAction,
   manualPointAdjustAction,
+  deleteUserAction,
 } from "@/app/actions/admin-moderation";
+import { AdminDeleteButton } from "@/components/admin-delete-button";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "User Management — Admin" };
@@ -209,6 +211,19 @@ export default async function AdminUsersPage({
                 <ActionCard title="Point Adjustment" icon={<ShieldCheck size={12} />}>
                   <AdjustForm userId={u.id} />
                 </ActionCard>
+
+                {/* Delete user — never show for self */}
+                {!isSelf && (
+                  <ActionCard title="Danger Zone" icon={<ShieldX size={12} />}>
+                    <p style={{ fontSize: "10px", color: "var(--color-text-ghost)", marginBottom: "6px" }}>
+                      Permanently deletes the account and all their votes, comments, and points. Content they submitted (characters, battles) is kept but unattributed.
+                    </p>
+                    <AdminDeleteButton
+                      action={deleteUserAction.bind(null, u.id)}
+                      label={`user ${u.name ?? u.email ?? u.id}`}
+                    />
+                  </ActionCard>
+                )}
               </div>
             </details>
           );
