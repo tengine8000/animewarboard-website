@@ -1,10 +1,8 @@
 import { signIn } from "@/auth";
 
 const PROVIDERS = [
-  { label: "Google",      id: "google"  },
-  { label: "Discord",     id: "discord" },
-  { label: "Reddit",      id: "reddit"  },
-  { label: "X / Twitter", id: "twitter" },
+  { label: "Google",  id: "google"  },
+  { label: "Discord", id: "discord" },
 ];
 
 const btnStyle = [
