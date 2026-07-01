@@ -40,7 +40,7 @@ export function FighterCarousel({ participants, side, label }: Props) {
           style={{ outline: `4px solid ${sideColor}`, outlineOffset: "2px" }}
         >
           {imageUrl ? (
-            <Image src={imageUrl} alt={current.variant.name} fill sizes="(max-width: 640px) 50vw, 320px" className="object-cover object-top" />
+            <Image src={imageUrl} alt={current.variant.name} fill sizes="(max-width: 640px) 50vw, 320px" className="object-cover object-top" unoptimized={imageUrl.startsWith("/uploads/")} />
           ) : (
             <div
               className="w-full h-full flex items-center justify-center text-4xl font-black"

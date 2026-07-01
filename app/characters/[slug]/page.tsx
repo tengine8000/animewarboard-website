@@ -108,7 +108,7 @@ export default async function CharacterPage({ params }: Props) {
             style={{ border: `2px solid ${seriesColor}44` }}>
             {imageUrl ? (
               <Image src={imageUrl} alt={entity.name} fill sizes="160px"
-                className="object-cover object-top" />
+                className="object-cover object-top" unoptimized={imageUrl.startsWith("/uploads/")} />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-6xl font-black"
                 style={{

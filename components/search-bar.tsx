@@ -83,7 +83,7 @@ export function SearchBar() {
                       className="flex items-center gap-3 px-4 py-2 hover:bg-[var(--color-surface-hover)] transition-colors">
                       <div className="w-8 h-8 rounded-full bg-[var(--color-border)] overflow-hidden shrink-0">
                         {e.imageUrl && (
-                          <Image src={e.imageUrl} alt={e.name} width={32} height={32} className="object-cover w-full h-full" />
+                          <Image src={e.imageUrl} alt={e.name} width={32} height={32} className="object-cover w-full h-full" unoptimized={e.imageUrl.startsWith("/uploads/")} />
                         )}
                       </div>
                       <div>

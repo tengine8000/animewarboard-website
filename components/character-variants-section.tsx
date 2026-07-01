@@ -67,7 +67,7 @@ export function CharacterVariantsSection({
                 >
                   {v.imageUrl && (
                     <div className="relative w-5 h-5 rounded-full overflow-hidden shrink-0">
-                      <Image src={v.imageUrl} alt={v.name} fill sizes="20px" className="object-cover" />
+                      <Image src={v.imageUrl} alt={v.name} fill sizes="20px" className="object-cover" unoptimized={v.imageUrl.startsWith("/uploads/")} />
                     </div>
                   )}
                   {v.name}
@@ -85,7 +85,7 @@ export function CharacterVariantsSection({
               style={{ border: `1px solid ${seriesColor}44` }}>
               {displayImage ? (
                 <Image src={displayImage} alt={selected.name} fill sizes="56px"
-                  className="object-cover object-top" />
+                  className="object-cover object-top" unoptimized={displayImage.startsWith("/uploads/")} />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-xl font-black"
                   style={{ background: `${seriesColor}22`, color: seriesColor }}>

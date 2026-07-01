@@ -195,7 +195,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                         }}>
                           {e.imageUrl && (
                             <Image src={e.imageUrl} alt={e.name} width={36} height={36}
-                              className="object-cover w-full h-full" />
+                              className="object-cover w-full h-full" unoptimized={e.imageUrl.startsWith("/uploads/")} />
                           )}
                         </div>
                         <div>

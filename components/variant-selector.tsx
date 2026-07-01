@@ -50,6 +50,7 @@ export function VariantSelector({ variants, entityName, entityImage, seriesColor
                   width={20}
                   height={20}
                   className="rounded-full object-cover"
+                  unoptimized={v.imageUrl.startsWith("/uploads/")}
                 />
               )}
               {v.name}
@@ -75,6 +76,7 @@ export function VariantSelector({ variants, entityName, entityImage, seriesColor
                 width={56}
                 height={56}
                 className="object-cover object-top w-full h-full"
+                unoptimized={displayImage.startsWith("/uploads/")}
               />
             ) : (
               <div
