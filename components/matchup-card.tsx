@@ -1,131 +1,38 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { MatchupCard } from "@/lib/queries";
 import { computeVoteSummary } from "@/lib/queries";
+import { PortraitCarousel } from "./portrait-carousel";
 
-const SIDE_A = "var(--color-side-a)";
-const SIDE_A_BG = "var(--color-side-a-bg)";
-const SIDE_A_BORDER = "var(--color-side-a-border)";
-const SIDE_B = "var(--color-side-b)";
-const SIDE_B_BG = "var(--color-side-b-bg)";
-const SIDE_B_BORDER = "var(--color-side-b-border)";
+const COLOR_A = "var(--color-side-a)";
+const COLOR_B = "var(--color-side-b)";
 
-interface FighterPanelProps {
-  entityName: string;
-  variantName: string;
-  seriesName: string;
-  imageUrl: string | null;
-  extraCount: number;
-  accentColor: string;
-  accentBg: string;
-  accentBorder: string;
-}
-
-function FighterPanel({
-  entityName, variantName, seriesName, imageUrl,
-  extraCount, accentColor, accentBg, accentBorder,
-}: FighterPanelProps) {
+function VSBolt() {
   return (
-    <div
-      style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "8px",
-        padding: "16px 12px",
-        minWidth: 0,
-      }}
-    >
-      {/* Avatar */}
-      <div
-        style={{
-          position: "relative",
-          width: 52,
-          height: 52,
-          borderRadius: "50%",
-          background: accentBg,
-          border: `2px solid ${accentBorder}`,
-          color: accentColor,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontWeight: 900,
-          fontSize: 22,
-          overflow: "hidden",
-          flexShrink: 0,
-        }}
-      >
-        {imageUrl ? (
-          <Image src={imageUrl} alt={entityName} fill sizes="80px" style={{ objectFit: "cover", objectPosition: "top" }} />
-        ) : (
-          <span>{entityName[0]}</span>
-        )}
-        {extraCount > 0 && (
-          <span
-            style={{
-              position: "absolute",
-              bottom: -2,
-              right: -2,
-              width: 18,
-              height: 18,
-              borderRadius: "50%",
-              background: accentColor,
-              color: "#fff",
-              fontSize: 9,
-              fontWeight: 700,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            +{extraCount}
-          </span>
-        )}
-      </div>
-
-      {/* Name stack */}
-      <div style={{ textAlign: "center", width: "100%", minWidth: 0, overflow: "hidden" }}>
-        <p
-          style={{
-            fontWeight: 700,
-            fontSize: 13,
-            color: "var(--color-text-base)",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            lineHeight: 1.2,
-          }}
-        >
-          {entityName}
-        </p>
-        <p
-          style={{
-            fontSize: 10,
-            color: "var(--color-text-ghost)",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            marginTop: 2,
-          }}
-        >
-          {variantName}
-        </p>
-        <p
-          style={{
-            fontSize: 9,
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            color: accentColor,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            marginTop: 3,
-          }}
-        >
-          {seriesName}
-        </p>
+    <div style={{
+      position: "relative", flexShrink: 0,
+      width: 44, height: 56,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      alignSelf: "center",
+    }}>
+      <span style={{
+        position: "absolute", inset: 0,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 58, lineHeight: 1,
+        background: "linear-gradient(160deg, var(--color-side-a) 20%, var(--color-side-b) 80%)",
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        opacity: 0.9,
+        filter: "drop-shadow(0 0 10px rgba(248,113,113,0.75)) drop-shadow(0 0 20px rgba(96,165,250,0.55))",
+        zIndex: 0,
+      }}>⚡</span>
+      <div style={{
+        position: "relative", zIndex: 1,
+        display: "flex", alignItems: "flex-end",
+        fontStyle: "italic", fontWeight: 900, lineHeight: 1,
+        userSelect: "none",
+      }}>
+        <span style={{ fontSize: 22, color: "#fff", textShadow: "0 0 10px rgba(255,255,255,0.57), 0 0 20px rgba(255,255,255,0.42), 0 0 30px rgba(255,255,255,0.24), 0 2px 8px rgba(0,0,0,0.9)" }}>V</span>
+        <span style={{ position: "relative", top: 6, right: 6, fontSize: 22, color: "#fff", textShadow: "0 0 10px rgba(255,255,255,0.57), 0 0 20px rgba(255,255,255,0.42), 0 0 30px rgba(255,255,255,0.24), 0 2px 8px rgba(0,0,0,0.9)", marginBottom: 1 }}>S</span>
       </div>
     </div>
   );
@@ -134,8 +41,15 @@ function FighterPanel({
 export function MatchupCard({ matchup }: { matchup: MatchupCard }) {
   const { slug, sideA, sideB, votes } = matchup;
   const summary = computeVoteSummary(votes.aVotes, votes.bVotes, votes.drawVotes);
-  const leadA = sideA[0];
-  const leadB = sideB[0];
+
+  // Map to plain serialisable props — keeps ioredis out of the client bundle
+  const toFighters = (ps: MatchupCard["sideA"]) =>
+    ps.map((p) => ({
+      slug:     p.entity.slug,
+      name:     p.entity.name,
+      series:   p.series.name,
+      imageUrl: p.variant.imageUrl ?? p.entity.imageUrl,
+    }));
 
   return (
     <Link
@@ -151,103 +65,34 @@ export function MatchupCard({ matchup }: { matchup: MatchupCard }) {
       }}
       className="hover:border-[var(--color-accent)]"
     >
-      {/* Fighter row */}
-      <div style={{ display: "flex", alignItems: "stretch" }}>
-
-        {/* Side A */}
-        {leadA && (
-          <FighterPanel
-            entityName={leadA.entity.name}
-            variantName={leadA.variant.name}
-            seriesName={leadA.series.name}
-            imageUrl={leadA.variant.imageUrl ?? leadA.entity.imageUrl}
-            extraCount={sideA.length - 1}
-            accentColor={SIDE_A}
-            accentBg={SIDE_A_BG}
-            accentBorder={SIDE_A_BORDER}
-          />
-        )}
-
-        {/* VS divider */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "0 6px",
-            borderLeft: "1px solid var(--color-border)",
-            borderRight: "1px solid var(--color-border)",
-            gap: 4,
-          }}
-        >
-          <span
-            style={{
-              color: "var(--color-accent)",
-              fontWeight: 900,
-              fontSize: 12,
-              letterSpacing: "0.15em",
-            }}
-          >
-            VS
-          </span>
-          {votes.total > 0 && (
-            <span
-              style={{
-                fontSize: 8,
-                color: "var(--color-text-ghost)",
-                textAlign: "center",
-                lineHeight: 1.2,
-              }}
-            >
-              {votes.total}
-              {"\n"}picks
-            </span>
-          )}
-        </div>
-
-        {/* Side B */}
-        {leadB && (
-          <FighterPanel
-            entityName={leadB.entity.name}
-            variantName={leadB.variant.name}
-            seriesName={leadB.series.name}
-            imageUrl={leadB.variant.imageUrl ?? leadB.entity.imageUrl}
-            extraCount={sideB.length - 1}
-            accentColor={SIDE_B}
-            accentBg={SIDE_B_BG}
-            accentBorder={SIDE_B_BORDER}
-          />
-        )}
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "10px 10px 10px" }}>
+        <PortraitCarousel fighters={toFighters(sideA)} side="a" />
+        <VSBolt />
+        <PortraitCarousel fighters={toFighters(sideB)} side="b" />
       </div>
 
       {/* Vote bar */}
-      <div
-        style={{
-          height: 3,
-          background: "var(--color-border)",
-          display: "flex",
-        }}
-      >
+      <div style={{ height: 3, display: "flex", background: "var(--color-border)" }}>
         {votes.total > 0 && (
           <>
-            <div style={{ width: `${summary.aPercent}%`, background: SIDE_A }} />
-            <div style={{ width: `${summary.bPercent}%`, background: SIDE_B }} />
+            <div style={{ width: `${summary.aPercent}%`, background: COLOR_A, transition: "width 0.4s" }} />
+            {summary.drawPercent > 0 && (
+              <div style={{ width: `${summary.drawPercent}%`, background: "var(--color-text-ghost)" }} />
+            )}
+            <div style={{ flex: 1, background: COLOR_B }} />
           </>
         )}
       </div>
 
       {/* Footer */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          padding: "6px 14px 10px",
-        }}
-      >
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        padding: "5px 12px 9px",
+      }}>
         <span style={{ fontSize: 9, color: "var(--color-text-ghost)" }}>
-          {votes.total === 0 ? "No predictions yet" : `${summary.aPercent}% · ${summary.bPercent}%`}
+          {votes.total === 0
+            ? "No predictions yet"
+            : `${summary.aPercent}% · ${summary.bPercent}%`}
         </span>
         {summary.settled && (
           <span style={{ fontSize: 9, fontWeight: 700, color: "#10b981", letterSpacing: "0.1em", textTransform: "uppercase" }}>
@@ -257,6 +102,11 @@ export function MatchupCard({ matchup }: { matchup: MatchupCard }) {
         {summary.contested && (
           <span style={{ fontSize: 9, fontWeight: 700, color: "#f59e0b", letterSpacing: "0.1em", textTransform: "uppercase" }}>
             Contested
+          </span>
+        )}
+        {votes.total > 0 && !summary.settled && !summary.contested && (
+          <span style={{ fontSize: 9, color: "var(--color-text-ghost)" }}>
+            {votes.total.toLocaleString()} picks
           </span>
         )}
       </div>
