@@ -66,27 +66,17 @@ export function NotificationBell({ initialCount }: { initialCount: number }) {
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    if (open) {
-      const y = window.scrollY;
-      document.body.dataset.lockY = String(y);
-      document.body.style.overflow = "hidden";
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${y}px`;
-      document.body.style.width = "100%";
-    } else {
-      const y = parseFloat(document.body.dataset.lockY ?? "0");
-      document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      delete document.body.dataset.lockY;
-      window.scrollTo(0, y);
-    }
+    if (!open) return;
+    const y = window.scrollY;
+    document.body.dataset.lockY = String(y);
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
     return () => {
+      const saved = parseFloat(document.body.dataset.lockY ?? "0");
+      document.documentElement.style.overflow = "";
       document.body.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
+      delete document.body.dataset.lockY;
+      window.scrollTo(0, saved);
     };
   }, [open]);
 

@@ -30,8 +30,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`} suppressHydrationWarning>
-      <body className="min-h-full flex flex-col bg-[var(--color-bg)] text-[var(--color-text-base)]">
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased dark`} suppressHydrationWarning>
+      <body className="min-h-dvh flex flex-col bg-[var(--color-bg)] text-[var(--color-text-base)]">
         <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem('awb-theme')==='light')document.documentElement.classList.remove('dark')}catch(e){}` }} />
         <ThemeProvider>
           <Nav />

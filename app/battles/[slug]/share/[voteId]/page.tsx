@@ -6,7 +6,6 @@ import { getSharePageData } from "@/lib/queries";
 import { ShareCaptureCard } from "@/components/share-capture-card";
 import { ShareCardContent } from "@/components/share-card-content";
 import { ShareCopyButton } from "@/components/share-copy-button";
-import { TikTokDownloadButton } from "@/components/tiktok-download-button";
 import { BattleCodeBadge } from "@/components/battle-code-badge";
 import type { Metadata } from "next";
 
@@ -118,7 +117,6 @@ export default async function SharePredictionPage({ params }: Props) {
           >
             WhatsApp
           </a>
-          <TikTokDownloadButton />
           <ShareCopyButton url={shareUrl} />
         </div>
       </div>

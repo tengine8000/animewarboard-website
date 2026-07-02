@@ -118,6 +118,7 @@ html {
 
 body {
   overflow-x: clip;
+  overscroll-behavior: none;
   background-color: var(--color-bg);
   color: var(--color-text-base);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
