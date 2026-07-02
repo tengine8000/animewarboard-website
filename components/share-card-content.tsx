@@ -30,7 +30,7 @@ const DIFFICULTY_LABEL: Record<string, string> = {
 // ── Team Carousel ─────────────────────────────────────────────────────────────
 
 function TeamCarousel({
-  participants, side, activeIndex, onPrev, onNext, outcome, difficulty, compact = false,
+  participants, side, activeIndex, onPrev, onNext, outcome, compact = false,
 }: {
   participants: ShareParticipant[];
   side:         "a" | "b";
@@ -38,7 +38,6 @@ function TeamCarousel({
   onPrev:       () => void;
   onNext:       () => void;
   outcome?:     "wins" | "loses" | "draw" | null;
-  difficulty?:  string | null;
   compact?:     boolean;
 }) {
   const color = side === "a" ? "var(--color-side-a)" : "var(--color-side-b)";
@@ -57,7 +56,6 @@ function TeamCarousel({
 
   const outcomeColor = outcome === "wins" ? "#4ade80" : outcome === "loses" ? "#f87171" : "var(--color-text-ghost)";
   const outcomeLabel = outcome === "wins" ? "WINS" : outcome === "loses" ? "LOSES" : outcome === "draw" ? "DRAW" : null;
-  const diffLabel    = difficulty ? (DIFFICULTY_LABEL[difficulty] ?? difficulty) : null;
 
   const externalNavBtn = (onClick: () => void, label: string) => (compact || count <= 1) ? null : (
     <button onClick={onClick} style={{
@@ -197,9 +195,9 @@ function TeamCarousel({
         </div>
       )}
 
-      {/* WINS / LOSES + difficulty badges */}
+      {/* WINS / LOSES badge */}
       {outcomeLabel && (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, marginTop: 2 }}>
+        <div style={{ marginTop: 2 }}>
           <div style={{
             fontSize: 9, fontWeight: 900, letterSpacing: "0.12em",
             padding: "2px 8px",
@@ -207,15 +205,6 @@ function TeamCarousel({
             color: outcomeColor,
             background: `color-mix(in srgb, ${outcomeColor} 12%, transparent)`,
           }}>{outcomeLabel}</div>
-          {diffLabel && (
-            <div style={{
-              fontSize: 8, fontWeight: 900, letterSpacing: "0.1em",
-              padding: "1px 6px",
-              border: `1px solid ${outcomeColor}`,
-              color: outcomeColor,
-              background: `color-mix(in srgb, ${outcomeColor} 8%, transparent)`,
-            }}>{diffLabel}</div>
-          )}
         </div>
       )}
     </div>
@@ -325,7 +314,6 @@ export function ShareCardContent({
             onPrev={() => setIndexA((i) => (i - 1 + participantsA.length) % participantsA.length)}
             onNext={() => setIndexA((i) => (i + 1) % participantsA.length)}
             outcome={outcomeA}
-            difficulty={difficulty}
             compact={compact}
           />
 
@@ -338,10 +326,25 @@ export function ShareCardContent({
             onPrev={() => setIndexB((i) => (i - 1 + participantsB.length) % participantsB.length)}
             onNext={() => setIndexB((i) => (i + 1) % participantsB.length)}
             outcome={outcomeB}
-            difficulty={difficulty}
             compact={compact}
           />
         </div>
+
+        {/* Difficulty — once, centered below VS */}
+        {difficulty && (
+          <div style={{ display: "flex", justifyContent: "center", paddingBottom: 8 }}>
+            <div style={{
+              fontSize: 9, fontWeight: 900, letterSpacing: "0.12em",
+              padding: "2px 10px",
+              border: "1px solid #f59e0b",
+              color: "#f59e0b",
+              background: "rgba(245,158,11,0.08)",
+              borderRadius: 3,
+            }}>
+              {DIFFICULTY_LABEL[difficulty] ?? difficulty}
+            </div>
+          </div>
+        )}
 
         {/* Radar + legend — uses entity stats as base, community avg as dashed line */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "4px 12px 10px" }}>

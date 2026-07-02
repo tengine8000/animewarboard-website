@@ -1210,6 +1210,7 @@ export type ShareParticipant = {
 export type SharePageData = {
   vote: { id: string; verdict: string; difficulty: string };
   matchupSlug: string;
+  matchupCode: string;
   labelA: string;
   labelB: string;
   userName: string | null;
@@ -1234,7 +1235,7 @@ export async function getSharePageData(voteId: string): Promise<SharePageData | 
   if (!voteRow) return null;
 
   // Fetch matchup + participants + user in parallel
-  const [matchup] = await db.select({ slug: matchups.slug, sideALabel: matchups.sideALabel, sideBLabel: matchups.sideBLabel })
+  const [matchup] = await db.select({ slug: matchups.slug, code: matchups.code, sideALabel: matchups.sideALabel, sideBLabel: matchups.sideBLabel })
     .from(matchups).where(eq(matchups.id, voteRow.matchupId)).limit(1);
   if (!matchup) return null;
 
@@ -1262,6 +1263,7 @@ export async function getSharePageData(voteId: string): Promise<SharePageData | 
   return {
     vote: { id: voteRow.id, verdict: voteRow.verdict, difficulty: voteRow.difficulty },
     matchupSlug: matchup.slug,
+    matchupCode: matchup.code,
     labelA,
     labelB,
     userName: userRow[0]?.name ?? null,

@@ -7,6 +7,7 @@ import { ShareCaptureCard } from "@/components/share-capture-card";
 import { ShareCardContent } from "@/components/share-card-content";
 import { ShareCopyButton } from "@/components/share-copy-button";
 import { TikTokDownloadButton } from "@/components/tiktok-download-button";
+import { BattleCodeBadge } from "@/components/battle-code-badge";
 import type { Metadata } from "next";
 
 type Props = { params: Promise<{ slug: string; voteId: string }> };
@@ -38,7 +39,7 @@ export default async function SharePredictionPage({ params }: Props) {
   const data = await getSharePageData(voteId);
   if (!data) notFound();
 
-  const { vote, labelA, labelB, userName, userStats, communityStats, radarStatsA, radarStatsB, participantsA, participantsB, communityEdge, voteSummary } = data;
+  const { vote, labelA, labelB, userName, userStats, communityStats, radarStatsA, radarStatsB, matchupCode, participantsA, participantsB, communityEdge, voteSummary } = data;
 
   const verdictText  = vote.verdict === "a" ? `${labelA} Wins` : vote.verdict === "b" ? `${labelB} Wins` : "Draw";
   const diffLabel    = DIFFICULTY_LABEL[vote.difficulty] ?? vote.difficulty;
@@ -62,6 +63,7 @@ export default async function SharePredictionPage({ params }: Props) {
         <h1 className="text-2xl font-black tracking-tight">
           {labelA} <span style={{ color: "var(--color-text-ghost)" }}>vs</span> {labelB}
         </h1>
+        <BattleCodeBadge code={matchupCode} />
       </div>
 
       {/* Capture card — only this is snapshotted for download */}
