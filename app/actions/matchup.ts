@@ -82,12 +82,10 @@ export async function createMatchupAction(payload: CreateMatchupPayload): Promis
 
   const variantMap = Object.fromEntries(variantRows.map((v) => [v.id, v]));
 
-  // All variants must be from the same top-level category
-  const categoryIds = [...new Set(variantRows.map((v) => v.categoryId))];
-  if (categoryIds.length > 1) {
-    return { ok: false, error: "All characters must be from the same universe category." };
-  }
-  const categoryId = categoryIds[0];
+  // For cross-universe battles use Side A's category (matchups.categoryId is NOT NULL)
+  const sideACategoryId = variantRows.find((v) => sideAVariantIds.includes(v.id))?.categoryId;
+  if (!sideACategoryId) return { ok: false, error: "Could not determine category." };
+  const categoryId = sideACategoryId;
 
   // Compute canonical hash
   const canonicalHash = computeCanonicalHash(sideAVariantIds, sideBVariantIds);
