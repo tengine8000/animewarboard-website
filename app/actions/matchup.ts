@@ -67,9 +67,10 @@ export async function createMatchupAction(payload: CreateMatchupPayload): Promis
   // Fetch variant info (names for slug, categoryId for matchup)
   const variantRows = await db
     .select({
-      id:         entityVariants.id,
-      name:       entityVariants.name,
-      categoryId: categories.id,
+      id:          entityVariants.id,
+      variantName: entityVariants.name,
+      entityName:  entities.name,
+      categoryId:  categories.id,
     })
     .from(entityVariants)
     .innerJoin(entities,   eq(entityVariants.entityId, entities.id))
@@ -101,10 +102,21 @@ export async function createMatchupAction(payload: CreateMatchupPayload): Promis
     return { ok: true, slug: existing.slug };
   }
 
-  // Build slug from participant names
-  const namesA = sideAVariantIds.map((id) => variantMap[id]?.name ?? "").join(" and ");
-  const namesB = sideBVariantIds.map((id) => variantMap[id]?.name ?? "").join(" and ");
-  const baseSlug = slugify(`${namesA}-vs-${namesB}`).slice(0, 80);
+  // Build slug: use first participant per side, combine entity + variant name
+  function participantSlugPart(variantId: string): string {
+    const v = variantMap[variantId];
+    if (!v) return "";
+    const entity  = v.entityName.trim();
+    const variant = v.variantName.trim();
+    // Omit variant suffix only when it's identical to the entity name
+    if (variant.toLowerCase() === entity.toLowerCase()) {
+      return entity;
+    }
+    return `${entity} ${variant}`;
+  }
+  const slugA = participantSlugPart(sideAVariantIds[0]);
+  const slugB = participantSlugPart(sideBVariantIds[0]);
+  const baseSlug = slugify(`${slugA}-vs-${slugB}`).slice(0, 80);
   const slug = await uniqueSlug(baseSlug);
 
   // Determine labels (only set if multiple participants on that side)
