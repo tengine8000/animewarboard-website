@@ -10,6 +10,7 @@ import { getUserPointSummary } from "@/lib/points";
 import { RANK_COLORS, RANK_ICONS } from "@/lib/ranks";
 import { RankBadge } from "@/components/rank-badge";
 import { UsernameForm } from "@/components/username-form";
+import { DisplayNameForm } from "@/components/display-name-form";
 import { AvatarUploadModal } from "@/components/avatar-upload-modal";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +64,7 @@ export default async function ProfilePage() {
           <div className="flex-1 min-w-0 space-y-2">
             <div>
               <h1 className="text-2xl font-black tracking-tight truncate">
-                {session.user.name ?? "Anonymous"}
+                {dbUser?.name ?? session.user.name ?? "Anonymous"}
               </h1>
               <p className="text-sm truncate" style={{ color: "var(--color-text-muted)" }}>
                 {session.user.email}
@@ -143,13 +144,16 @@ export default async function ProfilePage() {
         ))}
       </div>
 
-      {/* Username */}
+      {/* Display name + Username */}
       <ClipCard>
-        <UsernameForm
-          current={dbUser?.username ?? ""}
-          cooldownDays={cooldownDays}
-          changedAt={dbUser?.usernameChangedAt ?? null}
-        />
+        <DisplayNameForm current={dbUser?.name ?? session.user.name ?? ""} />
+        <div style={{ borderTop: "1px solid var(--color-border)" }}>
+          <UsernameForm
+            current={dbUser?.username ?? ""}
+            cooldownDays={cooldownDays}
+            changedAt={dbUser?.usernameChangedAt ?? null}
+          />
+        </div>
       </ClipCard>
 
       {/* Quick links */}
