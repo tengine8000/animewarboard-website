@@ -2,9 +2,10 @@
 
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { votes, voteAttributes, attributes, matchups } from "@/db/schema";
-import { eq, sql } from "drizzle-orm";
+import { votes, voteAttributes, attributes, matchups, pointTransactions } from "@/db/schema";
+import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { getAdminSettings } from "@/lib/points";
 
 export type VotePayload = {
   matchupId:   string;
@@ -30,6 +31,14 @@ export async function submitVoteAction(payload: VotePayload): Promise<VoteResult
   let voteId: string;
 
   try {
+    // Check if this is the voter's first vote on this matchup (before upsert)
+    const [existingVote] = await db
+      .select({ id: votes.id })
+      .from(votes)
+      .where(and(eq(votes.matchupId, matchupId), eq(votes.userId, userId)))
+      .limit(1);
+    const isFirstVote = !existingVote;
+
     // 1. Upsert verdict + difficulty — return id so the client can link to the share page
     const [voteRow] = await db
       .insert(votes)
@@ -40,6 +49,30 @@ export async function submitVoteAction(payload: VotePayload): Promise<VoteResult
       })
       .returning({ id: votes.id });
     voteId = voteRow.id;
+
+    // Award XP to the battle creator on the voter's first vote
+    if (isFirstVote) {
+      const [matchupRow] = await db
+        .select({ createdBy: matchups.createdBy })
+        .from(matchups)
+        .where(eq(matchups.id, matchupId))
+        .limit(1);
+
+      if (matchupRow?.createdBy && matchupRow.createdBy !== userId) {
+        const settings = await getAdminSettings();
+        const amount = settings["battle_vote_points"] ?? 2;
+        if (amount > 0) {
+          await db.insert(pointTransactions).values({
+            userId:        matchupRow.createdBy,
+            amount,
+            type:          "battle_vote_received",
+            referenceId:   matchupId,
+            referenceType: "matchup",
+            note:          `Vote by ${userId}`,
+          });
+        }
+      }
+    }
 
     // 2. Persist slider values into vote_attributes
     if (statValues && Object.keys(statValues).length > 0) {

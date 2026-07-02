@@ -64,6 +64,7 @@ export const transactionTypeEnum = pgEnum("transaction_type", [
   "boost_matchup",
   "content_penalty",
   "admin_adjustment",
+  "battle_vote_received",
 ]);
 
 export const transactionRefTypeEnum = pgEnum("transaction_ref_type", [

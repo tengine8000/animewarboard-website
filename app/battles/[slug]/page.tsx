@@ -10,6 +10,7 @@ import {
   getMatchupCommunityStatAverages,
   getMatchupComments,
 } from "@/lib/queries";
+import { getAdminSettings } from "@/lib/points";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/auth";
@@ -68,14 +69,18 @@ export default async function BattlePage({ params }: Props) {
   const labelB = deriveSideLabel(sideBLabel, sideB);
   const isLoggedIn = !!session?.user?.id;
 
-  const [radarStats, existingVote, existingStatValues, communityEdge, communityStats, comments] = await Promise.all([
+  const [radarStats, existingVote, existingStatValues, communityEdge, communityStats, comments, adminSettingsMap] = await Promise.all([
     getMatchupRadarStats(sideA, sideB),
     isLoggedIn ? getUserVoteForMatchup(session!.user!.id!, matchup.id) : null,
     isLoggedIn ? getUserVoteAttributes(session!.user!.id!, matchup.id) : {},
     getMatchupCommunityEdge(matchup.id),
     getMatchupCommunityStatAverages(matchup.id),
     getMatchupComments(matchup.id),
+    getAdminSettings(),
   ]);
+
+  const battleVotePoints = adminSettingsMap["battle_vote_points"] ?? 2;
+  const isCreator = !!session?.user?.id && session.user.id === matchup.createdBy;
 
   const summary = voteSummary;
   const firstA = sideA[0] as Participant | undefined;
@@ -100,12 +105,24 @@ export default async function BattlePage({ params }: Props) {
       />
 
       {creatorRole === "user" && creatorUsername && (
-        <p className="text-xs" style={{ color: "var(--color-text-ghost)" }}>
-          Submitted by{" "}
-          <Link href={`/u/${creatorUsername}`} className="hover:underline" style={{ color: "var(--color-accent)" }}>
-            @{creatorUsername}
-          </Link>
-        </p>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <p className="text-xs" style={{ color: "var(--color-text-ghost)" }}>
+            Submitted by{" "}
+            <Link href={`/u/${creatorUsername}`} className="hover:underline" style={{ color: "var(--color-accent)" }}>
+              @{creatorUsername}
+            </Link>
+          </p>
+          {isCreator && voteSummary.total > 0 && (
+            <p className="text-xs font-bold" style={{ color: "var(--color-text-ghost)" }}>
+              +{voteSummary.total * battleVotePoints} XP &middot; {voteSummary.total} vote{voteSummary.total !== 1 ? "s" : ""} on your battle
+            </p>
+          )}
+          {!isCreator && isLoggedIn && (
+            <Link href="/battles/create" className="text-[10px] font-semibold hover:underline" style={{ color: "var(--color-text-ghost)" }}>
+              Create battles &rarr; earn {battleVotePoints} XP per vote
+            </Link>
+          )}
+        </div>
       )}
 
       {/* ── BATTLE OVERVIEW ───────────────────────────────────────────── */}

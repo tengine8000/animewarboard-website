@@ -21,6 +21,7 @@ const GROUPS: Record<string, string> = {
   vote_upvote_points:         "Points & Login",
   entity_approved_points:     "Points & Login",
   entity_stat_rating_points:  "Points & Login",
+  battle_vote_points:         "Points & Login",
   corporal_xp_threshold:      "XP Thresholds",
   sergeant_xp_threshold:      "XP Thresholds",
   lieutenant_xp_threshold:    "XP Thresholds",
