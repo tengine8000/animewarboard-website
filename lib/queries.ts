@@ -5,7 +5,7 @@ import {
   voteAttributes, matchupComments, entityComments, commentVotes, users,
   pointTransactions, analyticsEvents, notifications,
 } from "@/db/schema";
-import { eq, desc, asc, sql, count, and, isNull, ilike, inArray, or } from "drizzle-orm";
+import { eq, desc, asc, sql, count, and, isNull, isNotNull, ilike, inArray, or } from "drizzle-orm";
 import { getRankFromXp } from "@/lib/ranks";
 import { getAdminSettings } from "@/lib/points";
 import { redis } from "@/lib/redis";
@@ -1276,4 +1276,154 @@ export async function getSharePageData(voteId: string): Promise<SharePageData | 
     communityEdge,
     voteSummary: computeVoteSummary(a, b, d),
   };
+}
+
+// ---------------------------------------------------------------------------
+// User contributions (profile page)
+// ---------------------------------------------------------------------------
+
+export type ContribCharacter = {
+  id: string;
+  name: string;
+  slug: string;
+  imageUrl: string | null;
+  status: "pending" | "approved" | "rejected";
+  seriesName: string;
+  seriesSlug: string;
+};
+
+export async function getUserContribCharacters(
+  userId: string,
+  includeAll: boolean,
+): Promise<ContribCharacter[]> {
+  const rows = await db
+    .select({
+      id:         entities.id,
+      name:       entities.name,
+      slug:       entities.slug,
+      imageUrl:   entities.imageUrl,
+      status:     entities.status,
+      seriesName: categories.name,
+      seriesSlug: categories.slug,
+    })
+    .from(entities)
+    .innerJoin(categories, eq(entities.categoryId, categories.id))
+    .where(and(
+      eq(entities.createdBy, userId),
+      includeAll ? undefined : eq(entities.status, "approved"),
+    ))
+    .orderBy(desc(entities.createdAt))
+    .limit(50);
+  return rows as ContribCharacter[];
+}
+
+export type ContribBattle = {
+  id: string;
+  slug: string;
+  labelA: string;
+  labelB: string;
+  totalVotes: number;
+  createdAt: Date;
+};
+
+export async function getUserContribBattles(userId: string): Promise<ContribBattle[]> {
+  const rows = await db
+    .select({
+      id:        matchups.id,
+      slug:      matchups.slug,
+      sideALabel: matchups.sideALabel,
+      sideBLabel: matchups.sideBLabel,
+      createdAt: matchups.createdAt,
+    })
+    .from(matchups)
+    .where(eq(matchups.createdBy, userId))
+    .orderBy(desc(matchups.createdAt))
+    .limit(50);
+
+  if (rows.length === 0) return [];
+
+  const ids = rows.map((r) => r.id);
+
+  const [allParticipants, voteCounts] = await Promise.all([
+    db
+      .select({
+        matchupId:   matchupParticipants.matchupId,
+        side:        matchupParticipants.side,
+        sortOrder:   matchupParticipants.sortOrder,
+        entityName:  entities.name,
+        variantName: entityVariants.name,
+      })
+      .from(matchupParticipants)
+      .innerJoin(entityVariants, eq(matchupParticipants.variantId, entityVariants.id))
+      .innerJoin(entities,       eq(entityVariants.entityId, entities.id))
+      .where(sql`${matchupParticipants.matchupId} = ANY(ARRAY[${sql.join(ids.map((id) => sql`${id}::uuid`), sql`, `)}])`)
+      .orderBy(asc(matchupParticipants.side), asc(matchupParticipants.sortOrder)),
+    db
+      .select({ matchupId: votes.matchupId, c: count() })
+      .from(votes)
+      .where(sql`${votes.matchupId} = ANY(ARRAY[${sql.join(ids.map((id) => sql`${id}::uuid`), sql`, `)}])`)
+      .groupBy(votes.matchupId),
+  ]);
+
+  return rows.map((m) => {
+    const ps = allParticipants.filter((p) => p.matchupId === m.id);
+    const firstA = ps.find((p) => p.side === "a");
+    const firstB = ps.find((p) => p.side === "b");
+
+    function participantLabel(p: typeof firstA): string {
+      if (!p) return "TBD";
+      const entity  = p.entityName.trim();
+      const variant = p.variantName.trim();
+      return variant.toLowerCase() === entity.toLowerCase() ? entity : `${entity} (${variant})`;
+    }
+
+    return {
+      id:         m.id,
+      slug:       m.slug,
+      labelA:     m.sideALabel ?? participantLabel(firstA),
+      labelB:     m.sideBLabel ?? participantLabel(firstB),
+      totalVotes: Number(voteCounts.find((v) => v.matchupId === m.id)?.c ?? 0),
+      createdAt:  m.createdAt,
+    };
+  });
+}
+
+export type ContribSeries = {
+  id: string;
+  name: string;
+  slug: string;
+  coverImage: string | null;
+  parentName: string | null;
+};
+
+export async function getUserContribSeries(userId: string): Promise<ContribSeries[]> {
+  const rows = await db
+    .select({
+      id:         categories.id,
+      name:       categories.name,
+      slug:       categories.slug,
+      coverImage: categories.coverImage,
+      parentId:   categories.parentId,
+    })
+    .from(categories)
+    .where(and(eq(categories.createdBy, userId), isNotNull(categories.parentId)))
+    .orderBy(desc(categories.createdAt))
+    .limit(50);
+
+  if (rows.length === 0) return [];
+
+  const uniqueParentIds = [...new Set(rows.map((r) => r.parentId!))];
+  const parentRows = await db
+    .select({ id: categories.id, name: categories.name })
+    .from(categories)
+    .where(inArray(categories.id, uniqueParentIds));
+  const parentMap = Object.fromEntries(parentRows.map((p) => [p.id, p.name]));
+
+  return rows.map((r) => ({
+    id:         r.id,
+    name:       r.name,
+    slug:       r.slug,
+    coverImage: r.coverImage,
+    parentName: r.parentId ? (parentMap[r.parentId] ?? null) : null,
+  }));
 }
