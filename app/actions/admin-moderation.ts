@@ -6,7 +6,7 @@ import { db } from "@/db";
 import {
   users, matchupComments, entityComments, pointTransactions, notifications,
   communityEntityStats, voteAttributes, votes, commentVotes,
-  entities, categories, matchups,
+  entities, categories, matchups, analyticsEvents,
 } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -124,10 +124,11 @@ export async function deleteUserAction(targetUserId: string) {
   if (targetUserId === selfId) return;
 
   await db.transaction(async (tx) => {
-    // Null out nullable createdBy so content is kept but unattributed
+    // Null out nullable FK columns so content is kept but unattributed
     await tx.update(entities).set({ createdBy: null }).where(eq(entities.createdBy, targetUserId));
     await tx.update(categories).set({ createdBy: null }).where(eq(categories.createdBy, targetUserId));
     await tx.update(matchups).set({ createdBy: null }).where(eq(matchups.createdBy, targetUserId));
+    await tx.update(analyticsEvents).set({ userId: null }).where(eq(analyticsEvents.userId, targetUserId));
 
     // Delete all non-nullable userId FK records
     await tx.delete(commentVotes).where(eq(commentVotes.userId, targetUserId));
