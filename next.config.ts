@@ -5,6 +5,7 @@ const isProd = process.env.NODE_ENV === "production";
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
+      { protocol: "https", hostname: "**.googleusercontent.com" },
       { protocol: "https", hostname: "**.wikia.com" },
       { protocol: "https", hostname: "**.fandom.com" },
       { protocol: "https", hostname: "static.wikia.nocookie.net" },
