@@ -83,12 +83,17 @@ export default async function RanksPage() {
         <ClipCard borderColor={`${RANK_COLORS[pointSummary.rank]}88`}>
           <div className="p-5 space-y-4">
             <div className="flex items-center gap-4">
-              <div className="inline-flex items-center select-none" style={{ filter: `drop-shadow(0 0 6px ${RANK_COLORS[pointSummary.rank]}99)` }}>
+              <div className="inline-flex items-center shrink-0 select-none" style={{ filter: `drop-shadow(0 0 6px ${RANK_COLORS[pointSummary.rank]}99)` }}>
                 <RankIcon rank={pointSummary.rank} size={40} />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg font-black">{session.user.name ?? "You"}</span>
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-lg font-black truncate">{session.user.name ?? "You"}</span>
+                  <Link href="/profile" className="text-xs font-semibold shrink-0 hover:underline" style={{ color: "var(--color-accent)" }}>
+                    View Profile →
+                  </Link>
+                </div>
+                <div>
                   <RankBadge rank={pointSummary.rank} size="sm" />
                 </div>
                 <div className="flex items-center gap-4 text-xs" style={{ color: "var(--color-text-muted)" }}>
@@ -96,9 +101,6 @@ export default async function RanksPage() {
                   <span className="flex items-center gap-1"><Coins size={10} /> {pointSummary.balance.toLocaleString()} pts</span>
                 </div>
               </div>
-              <Link href="/profile" className="text-xs font-semibold hover:underline" style={{ color: "var(--color-accent)" }}>
-                View Profile →
-              </Link>
             </div>
             {pointSummary.nextRank && (
               <div className="space-y-1">
