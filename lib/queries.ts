@@ -1214,7 +1214,9 @@ export type SharePageData = {
   labelB: string;
   userName: string | null;
   userStats: Record<string, number>;   // slug → scoreA (user's prediction)
-  communityStats: RadarStat[];          // community averages
+  communityStats: RadarStat[];          // community averages (dashed line)
+  radarStatsA: RadarStat[];             // entity stats for side A (radar base)
+  radarStatsB: RadarStat[];             // entity stats for side B (radar base)
   statOrder: string[];                  // attribute slugs in display order
   participantsA: ShareParticipant[];
   participantsB: ShareParticipant[];
@@ -1250,6 +1252,9 @@ export async function getSharePageData(voteId: string): Promise<SharePageData | 
   const labelA = deriveSideLabel(matchup.sideALabel, sideA);
   const labelB = deriveSideLabel(matchup.sideBLabel, sideB);
 
+  // Fetch entity stats now that we have variant IDs from participants
+  const radarStats = await getMatchupRadarStats(sideA, sideB);
+
   const a = Number(voteCounts.find((v) => v.verdict === "a")?.c  ?? 0);
   const b = Number(voteCounts.find((v) => v.verdict === "b")?.c  ?? 0);
   const d = Number(voteCounts.find((v) => v.verdict === "draw")?.c ?? 0);
@@ -1262,6 +1267,8 @@ export async function getSharePageData(voteId: string): Promise<SharePageData | 
     userName: userRow[0]?.name ?? null,
     userStats,
     communityStats,
+    radarStatsA: radarStats.a,
+    radarStatsB: radarStats.b,
     statOrder: communityStats.map((s) => s.slug),
     participantsA: sideA.map((p) => ({
       name: p.entity.name,

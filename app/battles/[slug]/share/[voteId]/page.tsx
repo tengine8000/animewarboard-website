@@ -38,7 +38,7 @@ export default async function SharePredictionPage({ params }: Props) {
   const data = await getSharePageData(voteId);
   if (!data) notFound();
 
-  const { vote, labelA, labelB, userName, userStats, communityStats, participantsA, participantsB, communityEdge, voteSummary } = data;
+  const { vote, labelA, labelB, userName, userStats, communityStats, radarStatsA, radarStatsB, participantsA, participantsB, communityEdge, voteSummary } = data;
 
   const verdictText  = vote.verdict === "a" ? `${labelA} Wins` : vote.verdict === "b" ? `${labelB} Wins` : "Draw";
   const diffLabel    = DIFFICULTY_LABEL[vote.difficulty] ?? vote.difficulty;
@@ -74,6 +74,8 @@ export default async function SharePredictionPage({ params }: Props) {
           difficulty={vote.difficulty}
           userStats={userStats}
           communityStats={communityStats}
+          radarStatsA={radarStatsA}
+          radarStatsB={radarStatsB}
           participantsA={participantsA}
           participantsB={participantsB}
           communityEdge={communityEdge}
