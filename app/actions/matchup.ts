@@ -8,6 +8,7 @@ import { eq, inArray } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getUserPointSummary } from "@/lib/points";
 import { CORPORAL_RANK_INDEX, type RankName } from "@/lib/ranks";
+import { generateUniqueBattleCode } from "@/lib/battle-code";
 
 type CreateMatchupPayload = {
   sideAVariantIds: string[];
@@ -117,7 +118,7 @@ export async function createMatchupAction(payload: CreateMatchupPayload): Promis
   const slugA = participantSlugPart(sideAVariantIds[0]);
   const slugB = participantSlugPart(sideBVariantIds[0]);
   const baseSlug = slugify(`${slugA}-vs-${slugB}`).slice(0, 80);
-  const slug = await uniqueSlug(baseSlug);
+  const [slug, code] = await Promise.all([uniqueSlug(baseSlug), generateUniqueBattleCode()]);
 
   // Determine labels (only set if multiple participants on that side)
   const labelA = sideALabel?.trim() || (sideAVariantIds.length > 1 ? sideALabel ?? null : null);
@@ -130,6 +131,7 @@ export async function createMatchupAction(payload: CreateMatchupPayload): Promis
       .values({
         categoryId,
         slug,
+        code,
         canonicalHash,
         sideALabel: labelA ?? null,
         sideBLabel: labelB ?? null,

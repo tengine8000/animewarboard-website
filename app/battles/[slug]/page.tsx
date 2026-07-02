@@ -17,6 +17,7 @@ import { auth } from "@/auth";
 import { BattleVoteForm } from "@/components/battle-vote-form";
 import { BattleOverviewCard } from "@/components/battle-overview-card";
 import { CommentSection } from "@/components/comment-section";
+import { BattleCodeBadge } from "@/components/battle-code-badge";
 import type { Metadata } from "next";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -104,14 +105,19 @@ export default async function BattlePage({ params }: Props) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {creatorRole === "user" && creatorUsername && (
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <p className="text-xs" style={{ color: "var(--color-text-ghost)" }}>
-            Submitted by{" "}
-            <Link href={`/u/${creatorUsername}`} className="hover:underline" style={{ color: "var(--color-accent)" }}>
-              @{creatorUsername}
-            </Link>
-          </p>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-3 flex-wrap">
+          {creatorRole === "user" && creatorUsername && (
+            <p className="text-xs" style={{ color: "var(--color-text-ghost)" }}>
+              Submitted by{" "}
+              <Link href={`/u/${creatorUsername}`} className="hover:underline" style={{ color: "var(--color-accent)" }}>
+                @{creatorUsername}
+              </Link>
+            </p>
+          )}
+          <BattleCodeBadge code={matchup.code} />
+        </div>
+        <div className="flex items-center gap-3">
           {isCreator && voteSummary.total > 0 && (
             <p className="text-xs font-bold" style={{ color: "var(--color-text-ghost)" }}>
               +{voteSummary.total * battleVotePoints} XP &middot; {voteSummary.total} vote{voteSummary.total !== 1 ? "s" : ""} on your battle
@@ -123,7 +129,7 @@ export default async function BattlePage({ params }: Props) {
             </Link>
           )}
         </div>
-      )}
+      </div>
 
       {/* ── BATTLE OVERVIEW ───────────────────────────────────────────── */}
       <BattleOverviewCard

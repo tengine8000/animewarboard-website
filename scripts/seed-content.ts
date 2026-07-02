@@ -17,10 +17,22 @@ import "dotenv/config";
 import crypto from "crypto";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import {
   categories, attributes, entities, entityVariants, entityStats, matchups, matchupParticipants,
 } from "../db/schema";
+
+const BATTLE_CODE_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+async function genBattleCode(db: ReturnType<typeof drizzle>): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    let suffix = "";
+    for (let i = 0; i < 7; i++) suffix += BATTLE_CODE_ALPHABET[Math.floor(Math.random() * 36)];
+    const code = `AWB-${suffix}`;
+    const [existing] = await (db as any).select({ id: matchups.id }).from(matchups).where(eq(matchups.code, code)).limit(1);
+    if (!existing) return code;
+  }
+  throw new Error("Could not generate unique battle code");
+}
 
 const client = postgres(process.env.DATABASE_URL!, { max: 1 });
 const db = drizzle(client);
@@ -578,6 +590,7 @@ async function main() {
     const matchup = await upsertMatchup({
       categoryId:    anime.id,
       slug:          matchupSlug,
+      code:          await genBattleCode(db),
       canonicalHash: hash,
       sideALabel:    m.sideALabel ?? null,
       sideBLabel:    m.sideBLabel ?? null,

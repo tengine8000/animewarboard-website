@@ -289,6 +289,7 @@ export const matchups = pgTable("matchups", {
   id:            uuid("id").primaryKey().defaultRandom(),
   categoryId:    uuid("category_id").notNull().references(() => categories.id),
   slug:          text("slug").notNull().unique(),
+  code:          text("code").notNull().unique(),
   canonicalHash: text("canonical_hash").notNull().unique(),
   sideALabel:    text("side_a_label"),
   sideBLabel:    text("side_b_label"),
@@ -298,6 +299,7 @@ export const matchups = pgTable("matchups", {
   index("matchups_canonical_hash_idx").on(t.canonicalHash),
   index("matchups_category_idx").on(t.categoryId),
   index("matchups_created_at_idx").on(t.createdAt),
+  index("matchups_code_idx").on(t.code),
 ]);
 
 // ---------------------------------------------------------------------------
