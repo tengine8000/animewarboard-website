@@ -9,6 +9,7 @@ import Image from "next/image";
 type Result = {
   entities: { id: string; name: string; slug: string; imageUrl: string | null; series: { name: string } }[];
   series:   { id: string; name: string; slug: string }[];
+  battle:   { slug: string } | null;
 };
 
 // ── Trigger button rendered inside the Nav ────────────────────────────────────
@@ -75,7 +76,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
     }, 250);
   }, []);
 
-  const hasResults = results && (results.entities.length > 0 || results.series.length > 0);
+  const hasResults = results && (results.entities.length > 0 || results.series.length > 0 || !!results.battle);
 
   return (
     <div
@@ -158,6 +159,25 @@ function SearchModal({ onClose }: { onClose: () => void }) {
 
             {!loading && hasResults && (
               <>
+                {results!.battle && (
+                  <div>
+                    <p style={{
+                      fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em",
+                      color: "var(--color-text-ghost)", textTransform: "uppercase",
+                      padding: "12px 16px 6px",
+                    }}>
+                      Battle
+                    </p>
+                    <Link href={`/battles/${results!.battle.slug}`} onClick={onClose}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-[var(--color-surface-hover)] transition-colors">
+                      <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--color-accent)", fontFamily: "monospace", letterSpacing: "0.08em" }}>
+                        {query.toUpperCase().startsWith("AWB-") ? query.toUpperCase() : `AWB-${query.toUpperCase()}`}
+                      </span>
+                      <span style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>→ Go to battle</span>
+                    </Link>
+                  </div>
+                )}
+
                 {results!.series.length > 0 && (
                   <div>
                     <p style={{
