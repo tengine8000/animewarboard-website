@@ -241,11 +241,11 @@ export default async function Image({ params }: { params: Promise<{ slug: string
               <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <div style={{ width: 18, height: 2, background: RED }} />
-                  <span style={{ fontSize: 9, fontWeight: 800, color: RED, letterSpacing: "0.08em" }}>FIGHTER A</span>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: RED, letterSpacing: "0.08em" }}>TEAM A</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <div style={{ width: 18, height: 2, background: BLUE }} />
-                  <span style={{ fontSize: 9, fontWeight: 800, color: BLUE, letterSpacing: "0.08em" }}>FIGHTER B</span>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: BLUE, letterSpacing: "0.08em" }}>TEAM B</span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <div style={{ width: 18, height: 1, borderTopWidth: "1.5px", borderTopStyle: "dashed", borderTopColor: MUTED }} />

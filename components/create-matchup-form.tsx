@@ -73,7 +73,7 @@ function SidePanel({ side, selected, onAdd, onRemove, label, onLabel }: SidePane
       {/* Side header */}
       <div className="flex items-center gap-2 pb-2" style={{ borderBottom: `2px solid ${color}` }}>
         <span className="font-black text-sm tracking-widest uppercase" style={{ color }}>
-          {side === "a" ? "Fighter A" : "Fighter B"}
+          {side === "a" ? "Team A" : "Team B"}
         </span>
         {selected.length > 0 && (
           <span className="text-[10px] ml-auto" style={{ color: "var(--color-text-ghost)" }}>

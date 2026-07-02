@@ -380,10 +380,10 @@ export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA,
           {/* Full-width fighter labels */}
           <div className="flex justify-between mb-3">
             <span className="text-[11px] font-black tracking-widest uppercase" style={{ color: "var(--color-side-a)" }}>
-              Fighter A
+              Team A
             </span>
             <span className="text-[11px] font-black tracking-widest uppercase" style={{ color: "var(--color-side-b)" }}>
-              Fighter B
+              Team B
             </span>
           </div>
 

@@ -93,7 +93,7 @@ export function FighterCarousel({ participants, side, label }: Props) {
       {/* Name + series */}
       <div className="text-center">
         <p className="font-black text-sm tracking-tight" style={{ color: sideColor }}>
-          {side === "a" ? "FIGHTER A" : "FIGHTER B"}
+          {side === "a" ? "TEAM A" : "TEAM B"}
         </p>
         <Link href={`/characters/${current.entity.slug}`}
           className="font-bold text-base text-[var(--color-text-base)] hover:text-[var(--color-accent)] transition-colors">
