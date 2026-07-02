@@ -62,10 +62,11 @@ export default async function AdminBattlesPage({
   const participants = matchupIds.length > 0
     ? await db
         .select({
-          matchupId:  matchupParticipants.matchupId,
-          side:       matchupParticipants.side,
-          entityName: entities.name,
-          imageUrl:   entityVariants.imageUrl,
+          matchupId:       matchupParticipants.matchupId,
+          side:            matchupParticipants.side,
+          entityName:      entities.name,
+          variantImageUrl: entityVariants.imageUrl,
+          entityImageUrl:  entities.imageUrl,
         })
         .from(matchupParticipants)
         .innerJoin(entityVariants, eq(matchupParticipants.variantId, entityVariants.id))
@@ -79,8 +80,9 @@ export default async function AdminBattlesPage({
   for (const p of participants) {
     if (!participantMap[p.matchupId]) participantMap[p.matchupId] = {};
     const entry = participantMap[p.matchupId];
-    if (p.side === "a" && !entry.a) { entry.a = p.entityName; entry.aImg = p.imageUrl; }
-    if (p.side === "b" && !entry.b) { entry.b = p.entityName; entry.bImg = p.imageUrl; }
+    const img = p.variantImageUrl ?? p.entityImageUrl;
+    if (p.side === "a" && !entry.a) { entry.a = p.entityName; entry.aImg = img; }
+    if (p.side === "b" && !entry.b) { entry.b = p.entityName; entry.bImg = img; }
   }
 
   return (
