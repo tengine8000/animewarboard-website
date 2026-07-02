@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Users, ChevronDown } from "lucide-react";
+import { Users, ChevronDown, ChevronRight } from "lucide-react";
 import { DynamicRadarChart } from "@/components/dynamic-radar-chart";
 import { PredictionConfidence } from "@/components/prediction-confidence";
 import type { RadarStat } from "@/lib/queries";
@@ -453,24 +453,27 @@ export function BattleOverviewCard({
                 onClick={() => setChartOpen((o) => !o)}
                 style={{
                   width: "100%",
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                  padding: "5px 12px",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
+                  padding: "6px 12px",
                   borderTop: "1px solid var(--color-border)",
                   background: "transparent",
                   cursor: "pointer",
-                  color: "var(--color-text-ghost)",
+                  color: "var(--color-accent)",
                 }}
               >
-                <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                  Stats
+                <span style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  textShadow: "0 0 8px var(--color-accent), 0 0 16px rgba(249,115,22,0.5)",
+                }}>
+                  {chartOpen ? "Hide Stats" : "View Stats"}
                 </span>
-                <ChevronDown
-                  size={12}
-                  style={{
-                    transition: "transform 0.25s ease",
-                    transform: chartOpen ? "rotate(0deg)" : "rotate(-90deg)",
-                  }}
-                />
+                {chartOpen
+                  ? <ChevronDown  size={13} style={{ filter: "drop-shadow(0 0 4px var(--color-accent))" }} />
+                  : <ChevronRight size={13} style={{ filter: "drop-shadow(0 0 4px var(--color-accent))" }} />
+                }
               </button>
 
               {/* Radar + Legend — collapsible */}
