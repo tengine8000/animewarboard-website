@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Users } from "lucide-react";
+import { Users, ChevronDown } from "lucide-react";
 import { DynamicRadarChart } from "@/components/dynamic-radar-chart";
 import { PredictionConfidence } from "@/components/prediction-confidence";
 import type { RadarStat } from "@/lib/queries";
@@ -272,6 +272,7 @@ export function BattleOverviewCard({
   const [indexA, setIndexA] = useState(0);
   const [indexB, setIndexB] = useState(0);
   const [compact, setCompact] = useState(false);
+  const [chartOpen, setChartOpen] = useState(true);
 
   const outcomeA = userVerdict === "a" ? "wins" : userVerdict === "b" ? "loses" : userVerdict === "draw" ? "draw" : null;
   const outcomeB = userVerdict === "b" ? "wins" : userVerdict === "a" ? "loses" : userVerdict === "draw" ? "draw" : null;
@@ -336,6 +337,12 @@ export function BattleOverviewCard({
     window.addEventListener("resize", check, { passive: true });
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  // Re-measure card height after chart open/close animation settles
+  useEffect(() => {
+    const t = setTimeout(() => window.dispatchEvent(new Event("resize")), 300);
+    return () => clearTimeout(t);
+  }, [chartOpen]);
 
   return (
     <>
@@ -441,29 +448,61 @@ export function BattleOverviewCard({
                 )}
               </div>
 
-              {/* Radar + Legend */}
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "4px 12px 10px" }}>
-                <div style={{ width: "min(280px, 100%)" }}>
-                  <DynamicRadarChart
-                    defaultStatsA={radarStatsA}
-                    defaultStatsB={radarStatsB}
-                    communityStats={communityStats}
-                    size={300}
-                  />
-                </div>
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--color-side-a)", fontSize: 9, fontWeight: 800, letterSpacing: "0.07em" }}>
-                    <span style={{ width: 18, height: 2, background: "var(--color-side-a)", display: "inline-block", flexShrink: 0 }} />
-                    TEAM A
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--color-side-b)", fontSize: 9, fontWeight: 800, letterSpacing: "0.07em" }}>
-                    <span style={{ width: 18, height: 2, background: "var(--color-side-b)", display: "inline-block", flexShrink: 0 }} />
-                    TEAM B
-                  </span>
-                  <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--color-chart-community)", fontSize: 9, fontWeight: 800, letterSpacing: "0.07em" }}>
-                    <span style={{ width: 18, height: 0, borderTop: "1.5px dashed var(--color-chart-community)", display: "inline-block", flexShrink: 0 }} />
-                    COMMUNITY AVG
-                  </span>
+              {/* Stats toggle row */}
+              <button
+                onClick={() => setChartOpen((o) => !o)}
+                style={{
+                  width: "100%",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  padding: "5px 12px",
+                  borderTop: "1px solid var(--color-border)",
+                  background: "transparent",
+                  cursor: "pointer",
+                  color: "var(--color-text-ghost)",
+                }}
+              >
+                <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase" }}>
+                  Stats
+                </span>
+                <ChevronDown
+                  size={12}
+                  style={{
+                    transition: "transform 0.25s ease",
+                    transform: chartOpen ? "rotate(0deg)" : "rotate(-90deg)",
+                  }}
+                />
+              </button>
+
+              {/* Radar + Legend — collapsible */}
+              <div style={{
+                overflow: "hidden",
+                maxHeight: chartOpen ? "400px" : "0px",
+                opacity: chartOpen ? 1 : 0,
+                transition: "max-height 0.28s ease, opacity 0.2s ease",
+              }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "4px 12px 10px" }}>
+                  <div style={{ width: "min(280px, 100%)" }}>
+                    <DynamicRadarChart
+                      defaultStatsA={radarStatsA}
+                      defaultStatsB={radarStatsB}
+                      communityStats={communityStats}
+                      size={300}
+                    />
+                  </div>
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--color-side-a)", fontSize: 9, fontWeight: 800, letterSpacing: "0.07em" }}>
+                      <span style={{ width: 18, height: 2, background: "var(--color-side-a)", display: "inline-block", flexShrink: 0 }} />
+                      TEAM A
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--color-side-b)", fontSize: 9, fontWeight: 800, letterSpacing: "0.07em" }}>
+                      <span style={{ width: 18, height: 2, background: "var(--color-side-b)", display: "inline-block", flexShrink: 0 }} />
+                      TEAM B
+                    </span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--color-chart-community)", fontSize: 9, fontWeight: 800, letterSpacing: "0.07em" }}>
+                      <span style={{ width: 18, height: 0, borderTop: "1.5px dashed var(--color-chart-community)", display: "inline-block", flexShrink: 0 }} />
+                      COMMUNITY AVG
+                    </span>
+                  </div>
                 </div>
               </div>
 
