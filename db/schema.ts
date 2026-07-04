@@ -65,6 +65,7 @@ export const transactionTypeEnum = pgEnum("transaction_type", [
   "content_penalty",
   "admin_adjustment",
   "battle_vote_received",
+  "signup_bonus",
 ]);
 
 export const transactionRefTypeEnum = pgEnum("transaction_ref_type", [
@@ -496,7 +497,20 @@ export const adminSettings = pgTable("admin_settings", {
 });
 
 // ---------------------------------------------------------------------------
-// 22. sponsors
+// 22. rank_upgrades  (immutable record of each rank promotion)
+// ---------------------------------------------------------------------------
+
+export const rankUpgrades = pgTable("rank_upgrades", {
+  id:         uuid("id").primaryKey().defaultRandom(),
+  userId:     uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  rank:       text("rank").notNull(),
+  achievedAt: timestamp("achieved_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (t) => [
+  index("rank_upgrades_user_idx").on(t.userId),
+]);
+
+// ---------------------------------------------------------------------------
+// 23. sponsors
 // ---------------------------------------------------------------------------
 
 export const sponsors = pgTable("sponsors", {

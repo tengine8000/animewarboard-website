@@ -12,6 +12,9 @@ import { RankBadge } from "@/components/rank-badge";
 import { UsernameForm } from "@/components/username-form";
 import { DisplayNameForm } from "@/components/display-name-form";
 import { AvatarUploadModal } from "@/components/avatar-upload-modal";
+import { PointsHistory } from "@/components/points-history";
+import { RankHistory } from "@/components/rank-history";
+import { getUserRankHistory } from "@/lib/points";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "My Profile" };
@@ -34,11 +37,12 @@ export default async function ProfilePage() {
 
   const userId = session.user.id;
 
-  const [[dbUser], [{ c: voteCount }], pointSummary, cooldownRow] = await Promise.all([
+  const [[dbUser], [{ c: voteCount }], pointSummary, cooldownRow, rankHistory] = await Promise.all([
     db.select().from(users).where(eq(users.id, userId)).limit(1),
     db.select({ c: count() }).from(votes).where(eq(votes.userId, userId)),
     getUserPointSummary(userId),
     db.select({ value: adminSettings.value }).from(adminSettings).where(eq(adminSettings.key, "username_change_cooldown_days")).limit(1),
+    getUserRankHistory(userId),
   ]);
 
   const cooldownDays = cooldownRow[0]?.value ?? 30;
@@ -154,6 +158,22 @@ export default async function ProfilePage() {
             changedAt={dbUser?.usernameChangedAt ?? null}
           />
         </div>
+      </ClipCard>
+
+      {/* Rank History */}
+      <ClipCard className="p-5 space-y-4">
+        <p className="text-[10px] font-black tracking-widest uppercase" style={{ color: "var(--color-text-ghost)" }}>
+          Rank History
+        </p>
+        <RankHistory rows={rankHistory} />
+      </ClipCard>
+
+      {/* Points History */}
+      <ClipCard className="p-5 space-y-4">
+        <p className="text-[10px] font-black tracking-widest uppercase" style={{ color: "var(--color-text-ghost)" }}>
+          Points History
+        </p>
+        <PointsHistory />
       </ClipCard>
 
       {/* Quick links */}

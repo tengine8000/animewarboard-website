@@ -17,6 +17,7 @@ const DEFAULTS: { key: string; value: number; label: string }[] = [
   { key: "boost_matchup_cost",           value: 25,    label: "Points spent to boost a matchup to trending" },
   { key: "content_penalty_points",       value: 15,    label: "Points deducted from the user whose content was removed" },
   { key: "battle_vote_points",           value: 2,     label: "XP awarded to battle creator per new voter" },
+  { key: "signup_bonus_points",          value: 50,    label: "One-time XP bonus awarded on first login" },
   { key: "corporal_xp_threshold",        value: 100,   label: "Lifetime XP needed for Corporal rank" },
   { key: "sergeant_xp_threshold",        value: 300,   label: "Lifetime XP needed for Sergeant rank" },
   { key: "lieutenant_xp_threshold",      value: 750,   label: "Lifetime XP needed for Lieutenant rank" },

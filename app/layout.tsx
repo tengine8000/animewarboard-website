@@ -8,6 +8,7 @@ import { Footer } from "@/components/footer";
 import { PageViewTracker } from "@/components/page-view-tracker";
 import { DailyLoginTracker } from "@/components/daily-login-tracker";
 import { RankGateToast } from "@/components/rank-gate-toast";
+import { PointAwardToast } from "@/components/point-award-toast";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Suspense>
           <DailyLoginTracker />
           <RankGateToast />
+          <PointAwardToast />
         </ThemeProvider>
       </body>
     </html>
