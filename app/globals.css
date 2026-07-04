@@ -1,27 +1,11 @@
 @import "tailwindcss";
 
-@font-face {
-  font-family: "Kamikaze";
-  src: url("/fonts/Kamikaze.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Kamikaze";
-  src: url("/fonts/Kamikaze-Italic.ttf") format("truetype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
 /* Enable class-based dark mode for Tailwind v4 — required for next-themes */
 @variant dark (&:where(.dark, .dark *));
 
 :root {
   /* Heading font */
-  --font-heading: "Kamikaze", "Impact", sans-serif;
+  --font-heading: var(--font-bebas), "Impact", sans-serif;
 
   /* Backgrounds */
   --color-bg:                  #f0f2f5;
