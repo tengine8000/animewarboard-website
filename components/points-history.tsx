@@ -6,17 +6,17 @@ import type { PointTxRow } from "@/lib/points";
 import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
 
 const TYPE_LABELS: Record<string, string> = {
-  all:            "All",
-  daily_login:    "Daily Login",
-  signup_bonus:   "Signup Bonus",
-  streak_bonus:   "Streak",
-  vote_upvote:    "Upvotes",
-  comment_upvote: "Upvotes",
-  battle_vote:    "Battle Vote",
-  entity_approved:"Submission",
-  flag_valid:     "Flag Reward",
-  flag_invalid:   "Flag Penalty",
-  content_penalty:"Penalty",
+  all:                  "All",
+  daily_login:          "Daily Login",
+  signup_bonus:         "Signup Bonus",
+  streak_bonus:         "Streak",
+  vote_upvoted:         "Upvotes",
+  comment_upvoted:      "Upvotes",
+  battle_vote_received: "Battle Vote",
+  entity_approved:      "Submission",
+  flag_rewarded:        "Flag Reward",
+  flag_dismissed:       "Flag Penalty",
+  content_penalty:      "Penalty",
 };
 
 const DATE_OPTIONS = [
@@ -27,7 +27,7 @@ const DATE_OPTIONS = [
 ] as const;
 
 const PILL_TYPES = [
-  "all", "daily_login", "streak_bonus", "signup_bonus", "vote_upvote", "battle_vote",
+  "all", "daily_login", "streak_bonus", "signup_bonus", "vote_upvoted", "battle_vote_received",
 ];
 
 function typeLabel(type: string) {
