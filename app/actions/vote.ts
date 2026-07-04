@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { votes, voteAttributes, attributes, matchups, pointTransactions } from "@/db/schema";
+import { votes, voteAttributes, attributes, matchups, pointTransactions, users } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getAdminSettings } from "@/lib/points";
@@ -62,13 +62,21 @@ export async function submitVoteAction(payload: VotePayload): Promise<VoteResult
         const settings = await getAdminSettings();
         const amount = settings["battle_vote_points"] ?? 2;
         if (amount > 0) {
+          const [voterRow] = await db
+            .select({ username: users.username, name: users.name })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1);
+          const voterHandle = voterRow?.username
+            ? `@${voterRow.username}`
+            : voterRow?.name ?? `user:${userId.slice(0, 8)}`;
           await db.insert(pointTransactions).values({
             userId:        matchupRow.createdBy,
             amount,
             type:          "battle_vote_received",
             referenceId:   matchupId,
             referenceType: "matchup",
-            note:          `Vote by ${userId}`,
+            note:          `Vote by ${voterHandle}`,
           });
         }
       }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
+import Link from "next/link";
 import { getPointHistoryAction } from "@/app/actions/points";
 import type { PointTxRow } from "@/lib/points";
 import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
@@ -43,6 +44,28 @@ function relativeDate(iso: string) {
   if (hours < 24) return `${hours}h ago`;
   if (days < 30)  return `${days}d ago`;
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
+// Renders a note, turning any @handle into a clickable /u/handle link
+function NoteCell({ note }: { note: string }) {
+  const match = note.match(/^(.*?)(@[\w.-]+)(.*)$/);
+  if (!match) {
+    return <p className="text-[11px] truncate" style={{ color: "var(--color-text-ghost)" }}>{note}</p>;
+  }
+  const [, before, handle, after] = match;
+  return (
+    <p className="text-[11px] truncate" style={{ color: "var(--color-text-ghost)" }}>
+      {before}
+      <Link
+        href={`/u/${handle.slice(1)}`}
+        className="hover:underline"
+        style={{ color: "var(--color-accent)" }}
+      >
+        {handle}
+      </Link>
+      {after}
+    </p>
+  );
 }
 
 export function PointsHistory() {
@@ -155,9 +178,7 @@ export function PointsHistory() {
               </span>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-semibold truncate">{typeLabel(row.type)}</p>
-                {row.note && (
-                  <p className="text-[11px] truncate" style={{ color: "var(--color-text-ghost)" }}>{row.note}</p>
-                )}
+                {row.note && <NoteCell note={row.note} />}
               </div>
               <span className="text-[11px] shrink-0 tabular-nums" style={{ color: "var(--color-text-ghost)" }}>
                 {relativeDate(row.createdAt)}
