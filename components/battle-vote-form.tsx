@@ -11,15 +11,17 @@ type Difficulty = "very_easy" | "easy" | "medium" | "hard" | "extreme";
 type ExistingVote = { id: string; verdict: Verdict; difficulty: Difficulty } | null;
 
 type Props = {
-  matchupId:         string;
-  matchupSlug:       string;
-  labelA:            string;
-  labelB:            string;
-  imageA:            string | null;
-  imageB:            string | null;
-  isLoggedIn:        boolean;
-  existingVote:      ExistingVote;
-  existingStatValues: Record<string, number>;
+  matchupId:           string;
+  matchupSlug:         string;
+  labelA:              string;
+  labelB:              string;
+  imageA:              string | null;
+  imageB:              string | null;
+  isLoggedIn:          boolean;
+  existingVote:        ExistingVote;
+  existingStatValues:  Record<string, number>;
+  communityStatValues?: Record<string, number>;
+  communityVoterCount?: number;
 };
 
 const DIFFICULTIES: { value: Difficulty; num: number; label: string; short: string; tip: string }[] = [
@@ -247,10 +249,10 @@ function StatSlider({ stat, value, onChange, disabled }: {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA, imageB, isLoggedIn, existingVote, existingStatValues }: Props) {
+export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA, imageB, isLoggedIn, existingVote, existingStatValues, communityStatValues = {}, communityVoterCount = 0 }: Props) {
   const [verdict,    setVerdict]    = useState<Verdict | null>(existingVote?.verdict ?? null);
   const [difficulty, setDifficulty] = useState<Difficulty | null>(existingVote?.difficulty ?? null);
-  const defaultStats = Object.fromEntries(STATS.map((s) => [s.slug, existingStatValues[s.slug] ?? 50]));
+  const defaultStats = Object.fromEntries(STATS.map((s) => [s.slug, existingStatValues[s.slug] ?? communityStatValues[s.slug] ?? 50]));
   const [statValues, setStatValues] = useState<Record<string, number>>(defaultStats);
   const [showRegisterPrompt, setShowRegisterPrompt] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -333,6 +335,24 @@ export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA,
 
   return (
     <div className="space-y-3">
+      {/* Encourage-prediction nudge — only for logged-in, non-voted users */}
+      {isLoggedIn && !existingVote && (
+        <div
+          className="flex items-center justify-center gap-2 px-4 py-2.5 text-[11px] font-semibold text-center"
+          style={{
+            clipPath: "polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px)",
+            background: "color-mix(in srgb, var(--color-accent) 10%, var(--color-surface))",
+            border: "1px solid color-mix(in srgb, var(--color-accent) 35%, transparent)",
+            color: "var(--color-accent)",
+          }}
+        >
+          <Swords size={12} style={{ flexShrink: 0 }} />
+          {communityVoterCount > 0
+            ? `${communityVoterCount.toLocaleString()} ${communityVoterCount === 1 ? "person has" : "people have"} predicted this battle · How do you see it?`
+            : "Be the first to predict this battle"}
+        </div>
+      )}
+
       {/* ── 1 + 2. VERDICT & DIFFICULTY — one card, gray divider ────────── */}
       <div style={{ position: "relative" }}>
         <ClipCard>

@@ -70,6 +70,7 @@ export type BattleOverviewCardProps = {
   userName?:       string | null;
   userVerdict?:    "a" | "b" | "draw" | null;
   userDifficulty?: string | null;
+  isLoggedIn?:     boolean;
 };
 
 // ── Team Carousel ──────────────────────────────────────────────────────────────
@@ -267,7 +268,7 @@ function TeamCarousel({
 
 export function BattleOverviewCard({
   sideA, sideB, radarStatsA, radarStatsB, communityStats, communityEdge, summary,
-  labelA, labelB, userName, userVerdict, userDifficulty,
+  labelA, labelB, userName, userVerdict, userDifficulty, isLoggedIn = false,
 }: BattleOverviewCardProps) {
   const [indexA, setIndexA] = useState(0);
   const [indexB, setIndexB] = useState(0);
@@ -484,13 +485,21 @@ export function BattleOverviewCard({
                 transition: "max-height 0.28s ease, opacity 0.2s ease",
               }}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "4px 12px 10px" }}>
-                  <div style={{ width: "min(280px, 100%)" }}>
+                  <div style={{ width: "min(280px, 100%)", position: "relative" }}>
                     <DynamicRadarChart
                       defaultStatsA={radarStatsA}
                       defaultStatsB={radarStatsB}
                       communityStats={communityStats}
                       size={300}
                     />
+                    {!isLoggedIn && (
+                      <div
+                        onClick={() => window.dispatchEvent(new CustomEvent("awb:rankgate", {
+                          detail: { required: "Private", current: null, xpNeeded: null, isGuest: true },
+                        }))}
+                        style={{ position: "absolute", inset: 0, cursor: "pointer", zIndex: 5 }}
+                      />
+                    )}
                   </div>
                   <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
                     <span style={{ display: "flex", alignItems: "center", gap: 4, color: "var(--color-side-a)", fontSize: 9, fontWeight: 800, letterSpacing: "0.07em" }}>

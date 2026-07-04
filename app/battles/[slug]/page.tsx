@@ -80,8 +80,9 @@ export default async function BattlePage({ params }: Props) {
     getAdminSettings(),
   ]);
 
-  const battleVotePoints = adminSettingsMap["battle_vote_points"] ?? 2;
-  const isCreator = !!session?.user?.id && session.user.id === matchup.createdBy;
+  const battleVotePoints     = adminSettingsMap["battle_vote_points"] ?? 2;
+  const isCreator            = !!session?.user?.id && session.user.id === matchup.createdBy;
+  const communityStatValues  = Object.fromEntries(communityStats.map((s) => [s.slug, s.value]));
 
   const summary = voteSummary;
   const firstA = sideA[0] as Participant | undefined;
@@ -145,6 +146,7 @@ export default async function BattlePage({ params }: Props) {
         userName={session?.user?.name ?? null}
         userVerdict={(existingVote?.verdict ?? null) as "a" | "b" | "draw" | null}
         userDifficulty={existingVote?.difficulty ?? null}
+        isLoggedIn={isLoggedIn}
       />
 
       {/* ── Prediction Form ───────────────────────────────────────────── */}
@@ -166,6 +168,8 @@ export default async function BattlePage({ params }: Props) {
             : null
         }
         existingStatValues={existingStatValues}
+        communityStatValues={communityStatValues}
+        communityVoterCount={summary.total}
       />
 
       {/* ── Community Discussion ──────────────────────────────────────── */}
