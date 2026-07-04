@@ -84,12 +84,9 @@ export async function submitVoteAction(payload: VotePayload): Promise<VoteResult
 
     // 2. Persist slider values into vote_attributes
     if (statValues && Object.keys(statValues).length > 0) {
-      // Resolve attribute slugs → IDs for this matchup's category
       const attrRows = await db
         .select({ id: attributes.id, slug: attributes.slug })
-        .from(attributes)
-        .innerJoin(matchups, eq(attributes.categoryId, matchups.categoryId))
-        .where(eq(matchups.id, matchupId));
+        .from(attributes);
 
       const slugToId = Object.fromEntries(attrRows.map((a) => [a.slug, a.id]));
 
