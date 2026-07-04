@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Bebas_Neue } from "next/font/google";
+import { Geist, Geist_Mono, Black_Ops_One } from "next/font/google";
 import { Suspense } from "react";
 import Script from "next/script";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -13,7 +13,7 @@ import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const bebasNeue = Bebas_Neue({ variable: "--font-bebas", weight: "400", subsets: ["latin"] });
+const blackOpsOne = Black_Ops_One({ variable: "--font-bebas", weight: "400", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://animewarboard.com"),
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${bebasNeue.variable} antialiased dark`} suppressHydrationWarning>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${blackOpsOne.variable} antialiased dark`} suppressHydrationWarning>
       <body className="min-h-dvh flex flex-col bg-[var(--color-bg)] text-[var(--color-text-base)]">
         <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: `try{if(localStorage.getItem('awb-theme')==='light')document.documentElement.classList.remove('dark')}catch(e){}` }} />
         <ThemeProvider>
