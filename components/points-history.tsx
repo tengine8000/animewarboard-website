@@ -14,6 +14,7 @@ const TYPE_LABELS: Record<string, string> = {
   vote_upvoted:         "Upvotes",
   comment_upvoted:      "Upvotes",
   battle_vote_received: "Battle Vote",
+  vote_cast:            "Vote Cast",
   entity_approved:      "Submission",
   flag_rewarded:        "Flag Reward",
   flag_dismissed:       "Flag Penalty",
@@ -28,7 +29,7 @@ const DATE_OPTIONS = [
 ] as const;
 
 const PILL_TYPES = [
-  "all", "daily_login", "streak_bonus", "signup_bonus", "vote_upvoted", "battle_vote_received",
+  "all", "daily_login", "streak_bonus", "signup_bonus", "vote_upvoted", "battle_vote_received", "vote_cast",
 ];
 
 function typeLabel(type: string) {

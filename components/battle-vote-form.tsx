@@ -286,8 +286,13 @@ export function BattleVoteForm({ matchupId, matchupSlug, labelA, labelB, imageA,
     setError(null);
     startTransition(async () => {
       const result = await submitVoteAction({ matchupId, matchupSlug, verdict, difficulty, statValues });
-      if (result.ok) { setVoteId(result.voteId); setSuccess(true); }
-      else setError("Something went wrong. Try again.");
+      if (result.ok) {
+        setVoteId(result.voteId);
+        setSuccess(true);
+        if (result.xpAwarded) {
+          window.dispatchEvent(new CustomEvent("awb:voteaward", { detail: { amount: result.xpAwarded } }));
+        }
+      } else setError("Something went wrong. Try again.");
     });
   }
 

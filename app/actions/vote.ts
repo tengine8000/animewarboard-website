@@ -16,7 +16,7 @@ export type VotePayload = {
 };
 
 export type VoteResult =
-  | { ok: true; voteId: string }
+  | { ok: true; voteId: string; xpAwarded?: number }
   | { ok: false; error: "not_authenticated" | "invalid_payload" | "db_error" };
 
 export async function submitVoteAction(payload: VotePayload): Promise<VoteResult> {
@@ -29,6 +29,7 @@ export async function submitVoteAction(payload: VotePayload): Promise<VoteResult
   const userId = session.user.id;
 
   let voteId: string;
+  let xpAwarded: number | undefined;
 
   try {
     // Check if this is the voter's first vote on this matchup (before upsert)
@@ -50,8 +51,10 @@ export async function submitVoteAction(payload: VotePayload): Promise<VoteResult
       .returning({ id: votes.id });
     voteId = voteRow.id;
 
-    // Award XP to the battle creator on the voter's first vote
     if (isFirstVote) {
+      const settings = await getAdminSettings();
+
+      // Award XP to the battle creator
       const [matchupRow] = await db
         .select({ createdBy: matchups.createdBy })
         .from(matchups)
@@ -59,9 +62,8 @@ export async function submitVoteAction(payload: VotePayload): Promise<VoteResult
         .limit(1);
 
       if (matchupRow?.createdBy && matchupRow.createdBy !== userId) {
-        const settings = await getAdminSettings();
-        const amount = settings["battle_vote_points"] ?? 2;
-        if (amount > 0) {
+        const creatorAmount = settings["battle_vote_points"] ?? 2;
+        if (creatorAmount > 0) {
           const [voterRow] = await db
             .select({ username: users.username, name: users.name })
             .from(users)
@@ -72,13 +74,27 @@ export async function submitVoteAction(payload: VotePayload): Promise<VoteResult
             : voterRow?.name ?? `user:${userId.slice(0, 8)}`;
           await db.insert(pointTransactions).values({
             userId:        matchupRow.createdBy,
-            amount,
+            amount:        creatorAmount,
             type:          "battle_vote_received",
             referenceId:   matchupId,
             referenceType: "matchup",
             note:          `Vote by ${voterHandle}`,
           });
         }
+      }
+
+      // Award XP to the voter
+      const voterAmount = settings["vote_cast_points"] ?? 5;
+      if (voterAmount > 0) {
+        await db.insert(pointTransactions).values({
+          userId,
+          amount:        voterAmount,
+          type:          "vote_cast",
+          referenceId:   matchupId,
+          referenceType: "matchup",
+          note:          "Battle vote cast",
+        });
+        xpAwarded = voterAmount;
       }
     }
 
@@ -114,5 +130,5 @@ export async function submitVoteAction(payload: VotePayload): Promise<VoteResult
   }
 
   revalidatePath(`/battles/${matchupSlug}`);
-  return { ok: true, voteId };
+  return { ok: true, voteId, xpAwarded };
 }

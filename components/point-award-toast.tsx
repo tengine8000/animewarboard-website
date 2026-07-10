@@ -10,9 +10,13 @@ type ToastData = Extract<DailyLoginResult, { awarded: true }>;
 const CLIP = "polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px)";
 
 export function PointAwardToast() {
-  const [visible, setVisible] = useState(false);
-  const [data, setData]       = useState<ToastData | null>(null);
-  const timerRef              = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [visible, setVisible]         = useState(false);
+  const [data, setData]               = useState<ToastData | null>(null);
+  const timerRef                      = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [voteVisible, setVoteVisible] = useState(false);
+  const [voteXp, setVoteXp]           = useState<number | null>(null);
+  const voteTimerRef                  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     function handler(e: Event) {
@@ -25,6 +29,76 @@ export function PointAwardToast() {
     window.addEventListener("awb:pointaward", handler);
     return () => window.removeEventListener("awb:pointaward", handler);
   }, []);
+
+  useEffect(() => {
+    function handler(e: Event) {
+      const { amount } = (e as CustomEvent<{ amount: number }>).detail;
+      if (voteTimerRef.current) clearTimeout(voteTimerRef.current);
+      setVoteXp(amount);
+      setVoteVisible(true);
+      voteTimerRef.current = setTimeout(() => setVoteVisible(false), 6000);
+    }
+    window.addEventListener("awb:voteaward", handler);
+    return () => window.removeEventListener("awb:voteaward", handler);
+  }, []);
+
+  if (!visible && !voteVisible) return null;
+
+  if (voteVisible && voteXp !== null) {
+    return (
+      <>
+        <style>{`
+          @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateX(calc(100% + 16px)); }
+            to   { opacity: 1; transform: translateX(0); }
+          }
+        `}</style>
+        <div
+          style={{
+            position: "fixed",
+            top: 72,
+            right: 16,
+            zIndex: 9999,
+            clipPath: CLIP,
+            background: "var(--color-border)",
+            padding: "1px",
+            minWidth: 280,
+            maxWidth: "calc(100vw - 32px)",
+            animation: "toastSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          <div
+            style={{
+              clipPath: CLIP,
+              background: "var(--color-bg)",
+              padding: "14px 18px",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 12,
+              boxShadow: "inset 0 0 0 1px rgba(34,197,94,0.3)",
+            }}
+          >
+            <Zap size={16} style={{ color: "#22c55e", flexShrink: 0, marginTop: 1 }} />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-black" style={{ color: "#22c55e" }}>
+                +{voteXp} XP · Battle Vote!
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--color-text-muted)" }}>
+                First vote reward
+              </p>
+            </div>
+            <button
+              onClick={() => setVoteVisible(false)}
+              className="shrink-0 p-0.5 transition-opacity hover:opacity-60"
+              style={{ color: "var(--color-text-ghost)" }}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   if (!visible || !data) return null;
 
