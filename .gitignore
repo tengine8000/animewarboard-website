@@ -43,3 +43,5 @@ docker-compose.yml
 
 # personal planning docs
 learnings/
+# for debugging purposes only
+debug.css 
