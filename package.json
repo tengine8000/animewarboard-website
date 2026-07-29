@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.7.4",
+    "@next/third-parties": "^16.2.12",
     "bcryptjs": "^2.4.3",
     "dotenv-expand": "^13.0.0",
     "drizzle-orm": "^0.45.2",
